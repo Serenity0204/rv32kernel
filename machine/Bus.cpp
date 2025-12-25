@@ -1,0 +1,13 @@
+#include "Bus.hpp"
+
+Bus::Bus(Memory& memory_ref) : memory(memory_ref) {}
+
+Word Bus::load(Addr addr, Word size)
+{
+    return this->memory.load(addr, size);
+}
+
+void Bus::store(Addr addr, Word size, Word value)
+{
+    this->memory.store(addr, size, value);
+}

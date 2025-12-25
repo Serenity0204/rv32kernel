@@ -10,7 +10,10 @@ using Word = uint32_t;
 using Reg = uint32_t;
 using Addr = uint32_t;
 
+// masks
+const Byte ByteMask = 0xFF;
+
 // Memory
-const Addr DRAM_BASE = 0x80000000;
+const Addr MEMORY_BASE = 0x80000000;
 // 128MB
-const Addr DRAM_SIZE = 1024 * 1024 * 128;
+const Addr MEMORY_SIZE = 1024 * 1024 * 128;
