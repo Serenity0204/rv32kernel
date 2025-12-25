@@ -7,7 +7,7 @@ TARGET := rv32emu
 
 # Directories
 OBJ_DIR := build
-MACHINE_DIR := machine
+MACHINE_DIR := core/machine
 
 
 # Sources and objects
