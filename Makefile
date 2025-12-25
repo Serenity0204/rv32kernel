@@ -7,9 +7,11 @@ TARGET := rv32emu
 
 # Directories
 OBJ_DIR := build
+MACHINE_DIR := machine
+
 
 # Sources and objects
-SRCS := main.cpp CPU.cpp Memory.cpp Utils.cpp
+SRCS := main.cpp $(wildcard $(MACHINE_DIR)/*.cpp)
 OBJS := $(SRCS:%.cpp=$(OBJ_DIR)/%.o)
 
 # Default target
@@ -21,11 +23,12 @@ $(TARGET): $(OBJS)
 
 # Compile
 $(OBJ_DIR)/%.o: %.cpp
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
-
+	rm -f examples/*.bin
+	
 .PHONY: all clean

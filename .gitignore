@@ -1,3 +1,5 @@
 build/
 rv32emu
 .vscode/
+
+examples/*.bin
