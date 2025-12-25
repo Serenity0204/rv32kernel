@@ -1,4 +1,4 @@
-# RISCV-Emulator
+# rv32emu
 
 Compile project
 ```
