@@ -5,15 +5,110 @@ void Executor::execLUI(CPU& cpu, Word instr) {}
 void Executor::execAUIPC(CPU& cpu, Word instr) {}
 
 // I Type
-void Executor::execADDI(CPU& cpu, Word instr) {}
-void Executor::execSLTI(CPU& cpu, Word instr) {}
-void Executor::execSLTIU(CPU& cpu, Word instr) {}
-void Executor::execXORI(CPU& cpu, Word instr) {}
-void Executor::execORI(CPU& cpu, Word instr) {}
-void Executor::execANDI(CPU& cpu, Word instr) {}
-void Executor::execSLLI(CPU& cpu, Word instr) {}
-void Executor::execSRLI(CPU& cpu, Word instr) {}
-void Executor::execSRAI(CPU& cpu, Word instr) {}
+void Executor::execADDI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Word val1 = cpu.regs[rs1];
+    Word result = val1 + imm;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSLTI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+
+    Word imm = Decoder::immI(instr);
+    int32_t val1 = static_cast<int32_t>(cpu.regs[rs1]);
+    int32_t imm_signed = static_cast<int32_t>(imm);
+
+    Word result = (val1 < imm_signed) ? 1 : 0;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSLTIU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+
+    Word imm = Decoder::immI(instr);
+    Word val1 = cpu.regs[rs1];
+
+    Word result = (val1 < imm) ? 1 : 0;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execXORI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Word val1 = cpu.regs[rs1];
+    Word result = val1 ^ imm;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execORI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Word val1 = cpu.regs[rs1];
+    Word result = val1 | imm;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execANDI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Word val1 = cpu.regs[rs1];
+    Word result = val1 & imm;
+    cpu.regs.write(rd, result);
+}
+void Executor::execSLLI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+
+    Word val1 = cpu.regs[rs1];
+    Word shamt = Decoder::shamtI(instr);
+    Word result = val1 << shamt;
+    cpu.regs.write(rd, result);
+}
+void Executor::execSRLI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+
+    Word val1 = cpu.regs[rs1];
+    Word shamt = Decoder::shamtI(instr);
+    Word result = val1 >> shamt;
+    cpu.regs.write(rd, result);
+}
+void Executor::execSRAI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+
+    int32_t val1 = static_cast<int32_t>(cpu.regs[rs1]);
+    Word shamt = Decoder::shamtI(instr);
+
+    Word result = static_cast<Word>(val1 >> shamt);
+    cpu.regs.write(rd, result);
+}
 
 // R type
 void Executor::execADD(CPU& cpu, Word instr)
@@ -174,13 +269,11 @@ void Executor::execLBU(CPU& cpu, Word instr) {}
 void Executor::execLHU(CPU& cpu, Word instr) {}
 
 // Store
-
 void Executor::execSB(CPU& cpu, Word instr) {}
 void Executor::execSH(CPU& cpu, Word instr) {}
 void Executor::execSW(CPU& cpu, Word instr) {}
 
 // Jump
-
 void Executor::execJAL(CPU& cpu, Word instr) {}
 void Executor::execJALR(CPU& cpu, Word instr) {}
 
