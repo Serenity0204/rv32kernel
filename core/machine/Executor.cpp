@@ -306,9 +306,95 @@ void Executor::execJALR(CPU& cpu, Word instr)
 }
 
 // Branch
-void Executor::execBEQ(CPU& cpu, Word instr) {}
-void Executor::execBNE(CPU& cpu, Word instr) {}
-void Executor::execBLT(CPU& cpu, Word instr) {}
-void Executor::execBGE(CPU& cpu, Word instr) {}
-void Executor::execBLTU(CPU& cpu, Word instr) {}
-void Executor::execBGEU(CPU& cpu, Word instr) {}
+void Executor::execBEQ(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immB(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+
+    // current PC already + 4, need to - 4 back
+    if (val1 == val2)
+    {
+        Addr nextPC = (cpu.pc - 4) + imm;
+        cpu.pc = nextPC;
+    }
+}
+void Executor::execBNE(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immB(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+
+    // current PC already + 4, need to - 4 back
+    if (val1 != val2)
+    {
+        Addr nextPC = (cpu.pc - 4) + imm;
+        cpu.pc = nextPC;
+    }
+}
+void Executor::execBLT(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immB(instr);
+
+    int32_t val1 = static_cast<int32_t>(cpu.regs[rs1]);
+    int32_t val2 = static_cast<int32_t>(cpu.regs[rs2]);
+
+    // current PC already + 4, need to - 4 back
+    if (val1 < val2)
+    {
+        Addr nextPC = (cpu.pc - 4) + imm;
+        cpu.pc = nextPC;
+    }
+}
+void Executor::execBGE(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immB(instr);
+
+    int32_t val1 = static_cast<int32_t>(cpu.regs[rs1]);
+    int32_t val2 = static_cast<int32_t>(cpu.regs[rs2]);
+
+    // current PC already + 4, need to - 4 back
+    if (val1 >= val2)
+    {
+        Addr nextPC = (cpu.pc - 4) + imm;
+        cpu.pc = nextPC;
+    }
+}
+void Executor::execBLTU(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immB(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+
+    // current PC already + 4, need to - 4 back
+    if (val1 < val2)
+    {
+        Addr nextPC = (cpu.pc - 4) + imm;
+        cpu.pc = nextPC;
+    }
+}
+void Executor::execBGEU(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immB(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+
+    // current PC already + 4, need to - 4 back
+    if (val1 >= val2)
+    {
+        Addr nextPC = (cpu.pc - 4) + imm;
+        cpu.pc = nextPC;
+    }
+}
