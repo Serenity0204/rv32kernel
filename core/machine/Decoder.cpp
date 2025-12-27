@@ -73,3 +73,13 @@ uint32_t Decoder::immJ(Word instr)
 
     return Utils::signExtend(imm, 21);
 }
+
+uint32_t Decoder::shamtI(Word instr)
+{
+    return Utils::extractBits(instr, 20, 24);
+}
+
+uint32_t Decoder::shamtR(Word val)
+{
+    return Utils::extractBits(val, 0, 4);
+}

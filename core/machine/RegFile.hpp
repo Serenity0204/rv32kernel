@@ -10,12 +10,11 @@ class RegFile
 public:
     RegFile();
     ~RegFile() = default;
-    Reg read(std::size_t index) const;
-    void write(std::size_t index, Reg value);
-    Reg operator[](std::size_t index) const;
+    Word read(std::size_t index) const;
+    void write(std::size_t index, Word value);
+    Word operator[](std::size_t index) const;
     void reset();
 
 private:
-    std::array<Reg, 32> regs;
+    std::array<Word, 32> regs;
 };
-

@@ -16,16 +16,134 @@ void Executor::execSRLI(CPU& cpu, Word instr) {}
 void Executor::execSRAI(CPU& cpu, Word instr) {}
 
 // R type
-void Executor::execADD(CPU& cpu, Word instr) {}
-void Executor::execSUB(CPU& cpu, Word instr) {}
-void Executor::execSLL(CPU& cpu, Word instr) {}
-void Executor::execSLT(CPU& cpu, Word instr) {}
-void Executor::execSLTU(CPU& cpu, Word instr) {}
-void Executor::execXOR(CPU& cpu, Word instr) {}
-void Executor::execSRL(CPU& cpu, Word instr) {}
-void Executor::execSRA(CPU& cpu, Word instr) {}
-void Executor::execOR(CPU& cpu, Word instr) {}
-void Executor::execAND(CPU& cpu, Word instr) {}
+void Executor::execADD(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word result = val1 + val2;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSUB(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word result = val1 - val2;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSLL(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word shamt = Decoder::shamtR(val2);
+    Word result = val1 << shamt;
+
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSLT(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    int32_t val1 = static_cast<int32_t>(cpu.regs[rs1]);
+    int32_t val2 = static_cast<int32_t>(cpu.regs[rs2]);
+
+    Word result = (val1 < val2) ? 1 : 0;
+
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSLTU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word result = (val1 < val2) ? 1 : 0;
+
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execXOR(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word result = val1 ^ val2;
+    cpu.regs.write(rd, result);
+}
+void Executor::execSRL(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word shamt = Decoder::shamtR(val2);
+    Word result = val1 >> shamt;
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execSRA(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    int32_t val1 = static_cast<int32_t>(cpu.regs[rs1]);
+    Word val2 = cpu.regs[rs2];
+    Word shamt = Decoder::shamtR(val2);
+    Word result = static_cast<Word>(val1 >> shamt);
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execOR(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word result = val1 | val2;
+    cpu.regs.write(rd, result);
+}
+void Executor::execAND(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word val1 = cpu.regs[rs1];
+    Word val2 = cpu.regs[rs2];
+    Word result = val1 & val2;
+    cpu.regs.write(rd, result);
+}
 
 // Others
 void Executor::execFENCE(CPU& cpu, Word instr) {}

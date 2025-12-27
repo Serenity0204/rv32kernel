@@ -1,5 +1,7 @@
 #pragma once
+#include "CPU.hpp"
 #include "Common.hpp"
+#include "Decoder.hpp"
 #include "Utils.hpp"
 
 class CPU;

@@ -10,13 +10,13 @@ void RegFile::reset()
     this->regs.fill(0);
 }
 
-Reg RegFile::read(std::size_t index) const
+Word RegFile::read(std::size_t index) const
 {
     assert(index < 32);
     return this->regs[index];
 }
 
-void RegFile::write(std::size_t index, Reg value)
+void RegFile::write(std::size_t index, Word value)
 {
     assert(index < 32);
 
@@ -25,7 +25,7 @@ void RegFile::write(std::size_t index, Reg value)
     this->regs[index] = value;
 }
 
-Reg RegFile::operator[](std::size_t index) const
+Word RegFile::operator[](std::size_t index) const
 {
     return this->read(index);
 }

@@ -21,4 +21,6 @@ public:
     static uint32_t immB(Word instr);
     static uint32_t immU(Word instr);
     static uint32_t immJ(Word instr);
+    static uint32_t shamtI(Word instr);
+    static uint32_t shamtR(Word val);
 };
