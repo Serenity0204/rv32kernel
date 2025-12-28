@@ -1,4 +1,4 @@
-# rv32emu
+# rv32sysemu
 
 Compile project
 ```
@@ -12,5 +12,5 @@ scripts/compile.sh <your_file.c>
 
 Run
 ```
-./rv32emu examples/<your_file.bin>
+./rv32sysemu examples/<your_file.bin>
 ```

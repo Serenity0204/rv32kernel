@@ -45,22 +45,22 @@ public:
     static void execFENCE(CPU& cpu, Word instr);
     static void execFENCEI(CPU& cpu, Word instr);
 
-    // CSR
-    static void execCSRRW(CPU& cpu, Word instr);
-    static void execCSRRS(CPU& cpu, Word instr);
-    static void execCSRRC(CPU& cpu, Word instr);
-    static void execCSRRWI(CPU& cpu, Word instr);
-    static void execCSRRSI(CPU& cpu, Word instr);
-    static void execCSRRCI(CPU& cpu, Word instr);
+    // // CSR
+    // static void execCSRRW(CPU& cpu, Word instr);
+    // static void execCSRRS(CPU& cpu, Word instr);
+    // static void execCSRRC(CPU& cpu, Word instr);
+    // static void execCSRRWI(CPU& cpu, Word instr);
+    // static void execCSRRSI(CPU& cpu, Word instr);
+    // static void execCSRRCI(CPU& cpu, Word instr);
 
-    // System
-    static void execECALL(CPU& cpu, Word instr);
-    static void execEBREAK(CPU& cpu, Word instr);
-    static void execSRET(CPU& cpu, Word instr);
-    static void execURET(CPU& cpu, Word instr);
-    static void execMRET(CPU& cpu, Word instr);
-    static void execWFI(CPU& cpu, Word instr);
-    static void execSFENCEVMA(CPU& cpu, Word instr);
+    // // System
+    // static void execECALL(CPU& cpu, Word instr);
+    // static void execEBREAK(CPU& cpu, Word instr);
+    // static void execSRET(CPU& cpu, Word instr);
+    // static void execURET(CPU& cpu, Word instr);
+    // static void execMRET(CPU& cpu, Word instr);
+    // static void execWFI(CPU& cpu, Word instr);
+    // static void execSFENCEVMA(CPU& cpu, Word instr);
 
     // Load
     static void execLB(CPU& cpu, Word instr);

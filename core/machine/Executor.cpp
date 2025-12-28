@@ -1,8 +1,21 @@
 #include "Executor.hpp"
 
 // Immediates
-void Executor::execLUI(CPU& cpu, Word instr) {}
-void Executor::execAUIPC(CPU& cpu, Word instr) {}
+void Executor::execLUI(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word imm = Decoder::immU(instr);
+    cpu.regs.write(rd, imm);
+}
+void Executor::execAUIPC(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word imm = Decoder::immU(instr);
+    Word currentPC = cpu.pc - 4;
+    cpu.regs.write(rd, currentPC + imm);
+}
 
 // I Type
 void Executor::execADDI(CPU& cpu, Word instr)
@@ -240,38 +253,119 @@ void Executor::execAND(CPU& cpu, Word instr)
     cpu.regs.write(rd, result);
 }
 
-// Others
-void Executor::execFENCE(CPU& cpu, Word instr) {}
-void Executor::execFENCEI(CPU& cpu, Word instr) {}
+// // Others
+// void Executor::execFENCE(CPU& cpu, Word instr) {}
+// void Executor::execFENCEI(CPU& cpu, Word instr) {}
 
-// CSR
-void Executor::execCSRRW(CPU& cpu, Word instr) {}
-void Executor::execCSRRS(CPU& cpu, Word instr) {}
-void Executor::execCSRRC(CPU& cpu, Word instr) {}
-void Executor::execCSRRWI(CPU& cpu, Word instr) {}
-void Executor::execCSRRSI(CPU& cpu, Word instr) {}
-void Executor::execCSRRCI(CPU& cpu, Word instr) {}
+// // CSR
+// void Executor::execCSRRW(CPU& cpu, Word instr) {}
+// void Executor::execCSRRS(CPU& cpu, Word instr) {}
+// void Executor::execCSRRC(CPU& cpu, Word instr) {}
+// void Executor::execCSRRWI(CPU& cpu, Word instr) {}
+// void Executor::execCSRRSI(CPU& cpu, Word instr) {}
+// void Executor::execCSRRCI(CPU& cpu, Word instr) {}
 
-// --- System ---
-void Executor::execECALL(CPU& cpu, Word instr) {}
-void Executor::execEBREAK(CPU& cpu, Word instr) {}
-void Executor::execSRET(CPU& cpu, Word instr) {}
-void Executor::execURET(CPU& cpu, Word instr) {}
-void Executor::execMRET(CPU& cpu, Word instr) {}
-void Executor::execWFI(CPU& cpu, Word instr) {}
-void Executor::execSFENCEVMA(CPU& cpu, Word instr) {}
+// // --- System ---
+// void Executor::execECALL(CPU& cpu, Word instr) {}
+// void Executor::execEBREAK(CPU& cpu, Word instr) {}
+// void Executor::execSRET(CPU& cpu, Word instr) {}
+// void Executor::execURET(CPU& cpu, Word instr) {}
+// void Executor::execMRET(CPU& cpu, Word instr) {}
+// void Executor::execWFI(CPU& cpu, Word instr) {}
+// void Executor::execSFENCEVMA(CPU& cpu, Word instr) {}
 
 // Load
-void Executor::execLB(CPU& cpu, Word instr) {}
-void Executor::execLH(CPU& cpu, Word instr) {}
-void Executor::execLW(CPU& cpu, Word instr) {}
-void Executor::execLBU(CPU& cpu, Word instr) {}
-void Executor::execLHU(CPU& cpu, Word instr) {}
+void Executor::execLB(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Addr addr = cpu.regs[rs1] + imm;
+
+    Word val = cpu.bus.load(addr, 1);
+
+    int32_t signedVal = static_cast<int32_t>(static_cast<int8_t>(val));
+    cpu.regs.write(rd, signedVal);
+}
+void Executor::execLH(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Addr addr = cpu.regs[rs1] + imm;
+
+    Word val = cpu.bus.load(addr, 2);
+    int32_t signedVal = static_cast<int32_t>(static_cast<int16_t>(val));
+    cpu.regs.write(rd, signedVal);
+}
+
+void Executor::execLW(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Addr addr = cpu.regs[rs1] + imm;
+
+    Word val = cpu.bus.load(addr, 4);
+    cpu.regs.write(rd, val);
+}
+void Executor::execLBU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Addr addr = cpu.regs[rs1] + imm;
+
+    Word val = cpu.bus.load(addr, 1);
+    cpu.regs.write(rd, val & 0xFF);
+}
+void Executor::execLHU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word imm = Decoder::immI(instr);
+    Addr addr = cpu.regs[rs1] + imm;
+
+    Word val = cpu.bus.load(addr, 2);
+    cpu.regs.write(rd, val & 0xFFFF);
+}
 
 // Store
-void Executor::execSB(CPU& cpu, Word instr) {}
-void Executor::execSH(CPU& cpu, Word instr) {}
-void Executor::execSW(CPU& cpu, Word instr) {}
+void Executor::execSB(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immS(instr);
+
+    Addr addr = cpu.regs[rs1] + imm;
+    Word val = cpu.regs[rs2];
+    cpu.bus.store(addr, 1, val);
+}
+void Executor::execSH(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immS(instr);
+
+    Addr addr = cpu.regs[rs1] + imm;
+    Word val = cpu.regs[rs2];
+    cpu.bus.store(addr, 2, val);
+}
+void Executor::execSW(CPU& cpu, Word instr)
+{
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+    Word imm = Decoder::immS(instr);
+
+    Addr addr = cpu.regs[rs1] + imm;
+    Word val = cpu.regs[rs2];
+    cpu.bus.store(addr, 4, val);
+}
 
 // Jump
 void Executor::execJAL(CPU& cpu, Word instr)

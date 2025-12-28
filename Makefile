@@ -3,7 +3,7 @@ CXX := g++
 CXXFLAGS := -std=c++17 -Wall -Wextra -Iinclude
 
 # Target
-TARGET := rv32emu
+TARGET := rv32sysemu
 
 # Directories
 OBJ_DIR := build

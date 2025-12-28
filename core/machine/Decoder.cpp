@@ -1,8 +1,8 @@
 #include "Decoder.hpp"
 
-uint32_t Decoder::opcode(Word instr)
+Opcode Decoder::opcode(Word instr)
 {
-    return Utils::extractBits(instr, 0, 6);
+    return static_cast<Opcode>(Utils::extractBits(instr, 0, 6));
 }
 
 uint32_t Decoder::rd(Word instr)
@@ -10,9 +10,9 @@ uint32_t Decoder::rd(Word instr)
     return Utils::extractBits(instr, 7, 11);
 }
 
-uint32_t Decoder::func3(Word instr)
+Func3 Decoder::func3(Word instr)
 {
-    return Utils::extractBits(instr, 12, 14);
+    return static_cast<Func3>(Utils::extractBits(instr, 12, 14));
 }
 
 uint32_t Decoder::rs1(Word instr)
@@ -25,9 +25,9 @@ uint32_t Decoder::rs2(Word instr)
     return Utils::extractBits(instr, 20, 24);
 }
 
-uint32_t Decoder::func7(Word instr)
+Func7 Decoder::func7(Word instr)
 {
-    return Utils::extractBits(instr, 25, 31);
+    return static_cast<Func7>(Utils::extractBits(instr, 25, 31));
 }
 
 uint32_t Decoder::immI(Word instr)
