@@ -16,8 +16,12 @@ public:
     void step();
     void reset();
     void dumpRegisters();
+    inline Addr getPC() { return this->pc; }
+    inline Word readReg(size_t index) { return this->regs[index]; }
+    inline bool isHalted() { return this->halted; }
 
 private:
+    bool halted;
     Bus& bus;
     RegFile regs;
     Addr pc;

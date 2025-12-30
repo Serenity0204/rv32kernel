@@ -6,14 +6,15 @@ enum class Opcode : uint8_t
 {
     R_Type = 0x33,
     I_Type = 0x13,
-    S_Type = 0x23,
     B_Type = 0x63,
+    STORE = 0x23,
     LOAD = 0x03,
     AUIPC = 0x17,
     LUI = 0x37,
     JALR = 0x67,
     JAL = 0x6F,
     SYSTEM = 0x73,
+    MISC_MEM = 0x0F,
 };
 
 enum class Func3 : uint8_t
@@ -53,12 +54,26 @@ enum class Func3 : uint8_t
     CSRRWI = 0x5,
     CSRRSI = 0x6,
     CSRRCI = 0x7,
+
+    FENCE = 0x0,
+    FENCE_I = 0x1,
+
+    // M Extension
+    MUL = 0x0,
+    MULH = 0x1,
+    MULHSU = 0x2,
+    MULHU = 0x3,
+    DIV = 0x4,
+    DIVU = 0x5,
+    REM = 0x6,
+    REMU = 0x7,
 };
 
 enum class Func7 : uint8_t
 {
     ADD_SRL = 0x00,
     SUB_SRA = 0x20,
+    M_TYPE = 0x01,
 };
 
 class Decoder

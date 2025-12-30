@@ -266,7 +266,24 @@ void Executor::execAND(CPU& cpu, Word instr)
 // void Executor::execCSRRCI(CPU& cpu, Word instr) {}
 
 // // --- System ---
-// void Executor::execECALL(CPU& cpu, Word instr) {}
+void Executor::execECALL(CPU& cpu, Word instr)
+{
+    (void)instr;
+    Word syscallID = cpu.regs[17];
+
+    switch (syscallID)
+    {
+    case 93:
+    {
+        cpu.halted = true;
+        break;
+    }
+    default:
+        std::cerr << "Unknown Syscall ID: " << syscallID << std::endl;
+        cpu.halted = true;
+        break;
+    }
+}
 // void Executor::execEBREAK(CPU& cpu, Word instr) {}
 // void Executor::execSRET(CPU& cpu, Word instr) {}
 // void Executor::execURET(CPU& cpu, Word instr) {}
@@ -493,4 +510,150 @@ void Executor::execBGEU(CPU& cpu, Word instr)
     }
 }
 
-F
+// M Extension
+void Executor::execMUL(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    Word result = cpu.regs[rs1] * cpu.regs[rs2];
+    cpu.regs.write(rd, result);
+}
+
+void Executor::execMULH(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    int64_t op1 = static_cast<int32_t>(cpu.regs[rs1]);
+    int64_t op2 = static_cast<int32_t>(cpu.regs[rs2]);
+    int64_t result = op1 * op2;
+
+    cpu.regs.write(rd, static_cast<Word>(result >> 32));
+}
+
+void Executor::execMULHSU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    int64_t op1 = static_cast<int32_t>(cpu.regs[rs1]);
+    uint64_t op2 = static_cast<Word>(cpu.regs[rs2]);
+
+    int64_t result = op1 * static_cast<int64_t>(op2);
+    cpu.regs.write(rd, static_cast<Word>(result >> 32));
+}
+
+void Executor::execMULHU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    uint64_t op1 = static_cast<Word>(cpu.regs[rs1]);
+    uint64_t op2 = static_cast<Word>(cpu.regs[rs2]);
+    uint64_t result = op1 * op2;
+
+    cpu.regs.write(rd, static_cast<Word>(result >> 32));
+}
+
+void Executor::execDIV(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    int32_t dividend = static_cast<int32_t>(cpu.regs[rs1]);
+    int32_t divisor = static_cast<int32_t>(cpu.regs[rs2]);
+
+    // Corner Case 1: Division by Zero
+    if (divisor == 0)
+    {
+        cpu.regs.write(rd, -1);
+        return;
+    }
+
+    // Corner Case 2: Signed Overflow (INT_MIN / -1)
+    if (dividend == std::numeric_limits<int32_t>::min() && divisor == -1)
+    {
+        cpu.regs.write(rd, static_cast<Word>(dividend));
+        return;
+    }
+
+    cpu.regs.write(rd, static_cast<Word>(dividend / divisor));
+}
+
+void Executor::execDIVU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    Word dividend = cpu.regs[rs1];
+    Word divisor = cpu.regs[rs2];
+
+    // Corner Case: Division by Zero
+    if (divisor == 0)
+    {
+        cpu.regs.write(rd, 0xFFFFFFFF);
+        return;
+    }
+
+    cpu.regs.write(rd, dividend / divisor);
+}
+
+void Executor::execREM(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    int32_t dividend = static_cast<int32_t>(cpu.regs[rs1]);
+    int32_t divisor = static_cast<int32_t>(cpu.regs[rs2]);
+
+    // Corner Case 1: Division by Zero
+    if (divisor == 0)
+    {
+        cpu.regs.write(rd, static_cast<Word>(dividend));
+        return;
+    }
+
+    // Corner Case 2: Signed Overflow (INT_MIN / -1)
+    if (dividend == std::numeric_limits<int32_t>::min() && divisor == -1)
+    {
+        cpu.regs.write(rd, 0);
+        return;
+    }
+
+    cpu.regs.write(rd, static_cast<Word>(dividend % divisor));
+}
+
+void Executor::execREMU(CPU& cpu, Word instr)
+{
+    Word rd = Decoder::rd(instr);
+    if (rd == 0) return;
+    Word rs1 = Decoder::rs1(instr);
+    Word rs2 = Decoder::rs2(instr);
+
+    Word dividend = cpu.regs[rs1];
+    Word divisor = cpu.regs[rs2];
+
+    // Corner Case: Division by Zero
+    if (divisor == 0)
+    {
+        cpu.regs.write(rd, dividend);
+        return;
+    }
+
+    cpu.regs.write(rd, dividend % divisor);
+}

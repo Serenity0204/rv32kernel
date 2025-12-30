@@ -29,6 +29,8 @@ $(OBJ_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
+all: $(TARGET) programs
+
 # Clean
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
@@ -41,4 +43,4 @@ programs:
 		scripts/compile.sh $$src; \
 	done
 
-.PHONY: all clean
+.PHONY: all clean programs

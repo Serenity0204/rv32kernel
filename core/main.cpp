@@ -15,21 +15,40 @@ int main(int argc, char* argv[])
 
     // init
     Memory memory;
-    Bus bus(memory);
-    CPU cpu(bus);
-
     std::string filename = std::string(argv[1]);
     bool good = loadBinary(filename, memory);
+
     if (!good)
     {
         std::cout << "Failed to load binary.\n";
         return 1;
     }
+    Bus bus(memory);
+    CPU cpu(bus);
+    cpu.reset();
 
-    // Run 10 cycles for testing
-    for (int i = 0; i < 10; i++)
+    std::cout << "Simulation started..." << std::endl;
+
+    uint64_t instructions = 0;
+    while (!cpu.isHalted())
     {
-        cpu.step();
+        try
+        {
+            cpu.step();
+            instructions++;
+        }
+        catch (std::exception& e)
+        {
+            std::cerr << "Exception: " << e.what() << std::endl;
+            break;
+        }
     }
-    return 0;
+
+    // x10 (a0)
+    Word result = cpu.readReg(10);
+    std::cout << "--------------------------------\n";
+    std::cout << "Simulation finished in " << std::dec << instructions << " instructions.\n";
+    std::cout << "Exit Code (x10): " << result << "\n";
+    std::cout << "--------------------------------\n";
+    return 1;
 }

@@ -12,3 +12,11 @@ uint32_t Utils::extractBits(uint32_t value, int start, int end)
     uint32_t mask = (1ULL << len) - 1;
     return (value >> start) & mask;
 }
+
+[[noreturn]] void Utils::illegal(Word instr, const char* why)
+{
+    std::cerr << "Illegal instruction: 0x"
+              << std::hex << instr << std::dec
+              << " (" << why << ")\n";
+    std::exit(1);
+}

@@ -55,7 +55,7 @@ public:
     // static void execCSRRCI(CPU& cpu, Word instr);
 
     // // System
-    // static void execECALL(CPU& cpu, Word instr);
+    static void execECALL(CPU& cpu, Word instr);
     // static void execEBREAK(CPU& cpu, Word instr);
     // static void execSRET(CPU& cpu, Word instr);
     // static void execURET(CPU& cpu, Word instr);
