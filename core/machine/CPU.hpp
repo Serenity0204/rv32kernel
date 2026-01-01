@@ -26,6 +26,7 @@ public:
     inline void writeReg(std::size_t index, Word value) { this->regs.write(index, value); }
     // memory
     Word load(Addr addr, std::size_t size);
+    void store(Addr addr, std::size_t size, Word value);
 
     // status
     inline bool isHalted() { return this->halted; }

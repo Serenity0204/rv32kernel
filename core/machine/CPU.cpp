@@ -335,3 +335,8 @@ Word CPU::load(Addr addr, std::size_t size)
 {
     return this->bus.load(addr, size);
 }
+
+void CPU::store(Addr addr, std::size_t size, Word value)
+{
+    this->bus.store(addr, size, value);
+}
