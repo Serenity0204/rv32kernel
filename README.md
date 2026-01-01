@@ -1,11 +1,15 @@
 # rv32sysemu
 
 Compile project and C code
+```bash
+bash build.sh
 ```
-make all
+Clean
+```bash
+bash clean.sh
 ```
 Run
-```
+```bash
 ./rv32sysemu programs/<your_file.bin>
 ```
 
@@ -13,9 +17,16 @@ Run
 Directory Structure
 ```
 rv32sysemu
-├── Makefile
+├── CMakeLists.txt
 ├── README.md
+├── build.sh
+├── clean.sh
 ├── core
+│   ├── common
+│   │   └── Exception.hpp
+│   ├── kernel
+│   │   ├── Kernel.cpp
+│   │   └── Kernel.hpp
 │   ├── machine
 │   │   ├── Bus.cpp
 │   │   ├── Bus.hpp
@@ -35,7 +46,9 @@ rv32sysemu
 │   └── main.cpp
 ├── lib
 │   ├── start.S
-│   └── syscall.c
+│   ├── syscall.c
+│   ├── syscall.h
+│   └── sysdef.h
 ├── programs
 │   ├── test1.c
 │   └── test2.c
