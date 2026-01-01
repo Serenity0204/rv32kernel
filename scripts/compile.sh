@@ -26,7 +26,8 @@ SYSCALL_SRC="${LIB_DIR}/syscall.c"
 SYSCALL_OBJ="${LIB_DIR}/syscall.o"
 STDIO_SRC="${LIB_DIR}/stdio.c"
 STDIO_OBJ="${LIB_DIR}/stdio.o"
-
+STDLIB_SRC="${LIB_DIR}/stdlib.c"
+STDLIB_OBJ="${LIB_DIR}/stdlib.o"
 
 # Toolchain Variables
 CC=riscv64-unknown-elf-gcc
@@ -38,12 +39,13 @@ CFLAGS="-march=rv32im -mabi=ilp32 -c -nostdlib -fno-builtin -mno-relax"
 LDFLAGS="-m elf32lriscv -T scripts/linker.ld -nostdlib --no-warn-rwx-segments"
 
 echo "--- Building $SOURCE_FILE in directory: $DIR_NAME ---"
-# Step 1: Compile Helpers (start.S & syscalls.c)
-if [ ! -f "$START_OBJ" ] || [ ! -f "$SYSCALL_OBJ" ]; then
+# Step 1: Compile Helpers (start.S, syscalls.c, stdio.c, stdlib.c)
+if [ ! -f "$START_OBJ" ] || [ ! -f "$SYSCALL_OBJ" ] || [ ! -f "$STDIO_OBJ" ] || [ ! -f "$STDLIB_OBJ" ]; then
     echo "[1/5] Compiling System Libs..."
     $CC $CFLAGS $INCLUDE_DIRS "$START_SRC" -o "$START_OBJ"
     $CC $CFLAGS $INCLUDE_DIRS "$SYSCALL_SRC" -o "$SYSCALL_OBJ"
     $CC $CFLAGS $INCLUDE_DIRS "$STDIO_SRC" -o "$STDIO_OBJ"
+    $CC $CFLAGS $INCLUDE_DIRS "$STDLIB_SRC" -o "$STDLIB_OBJ"
 else
     echo "[1/5] System Libs already compiled."
 fi
@@ -56,7 +58,7 @@ if [ $? -ne 0 ]; then echo "Error: Compilation failed"; exit 1; fi
 
 # Step 3: Link
 echo "[3/5] Linking..."
-$LD $LDFLAGS "$START_OBJ" "$SYSCALL_OBJ" "$STDIO_OBJ" "$OBJ_FILE" -o "$ELF_FILE"
+$LD $LDFLAGS "$START_OBJ" "$SYSCALL_OBJ" "$STDIO_OBJ" "$STDLIB_OBJ" "$OBJ_FILE" -o "$ELF_FILE"
 if [ $? -ne 0 ]; then echo "Error: Linking failed"; exit 1; fi
 
 # Step 4: Convert to Binary

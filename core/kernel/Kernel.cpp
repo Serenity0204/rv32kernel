@@ -35,8 +35,37 @@ void Kernel::handleSyscall(SyscallID syscallID)
             this->cpu.writeReg(10, written);
             return;
         }
-        // invalid
+        // other fd, not supported yet
         this->cpu.writeReg(10, static_cast<Word>(-1));
+        return;
+    }
+    case SyscallID::SYS_READ:
+    {
+        Word rawFD = this->cpu.readReg(10);
+        Word addr = this->cpu.readReg(11);
+        Word count = this->cpu.readReg(12);
+        FileDescriptor fd = static_cast<FileDescriptor>(rawFD);
+        if (fd == FileDescriptor::STDIN)
+        {
+            std::vector<char> hostBuffer(count);
+            ssize_t bytesRead = ::read(STDIN_FILENO, hostBuffer.data(), count);
+
+            if (bytesRead > 0)
+            {
+                for (ssize_t i = 0; i < bytesRead; ++i)
+                {
+                    char rawChar = hostBuffer[i];
+                    uint8_t byte = static_cast<uint8_t>(rawChar);
+                    this->cpu.store(addr + static_cast<Addr>(i), 1, static_cast<Word>(byte));
+                }
+            }
+            // other fd, not supported yet
+            this->cpu.writeReg(10, static_cast<Word>(bytesRead));
+            return;
+        }
+
+        this->cpu.writeReg(10, static_cast<Word>(-1));
+        return;
         return;
     }
     default:

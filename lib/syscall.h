@@ -4,8 +4,10 @@
 // System Call IDs
 #define SYS_EXIT 0
 #define SYS_WRITE 1
+#define SYS_READ 2
 
 void exit(int code);
 int write(int fd, void* buf, int count);
+int read(int fd, void* buf, int count);
 
 #endif
