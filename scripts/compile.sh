@@ -35,7 +35,7 @@ OBJCOPY=riscv64-unknown-elf-objcopy
 
 # Flags
 CFLAGS="-march=rv32im -mabi=ilp32 -c -nostdlib -fno-builtin -mno-relax"
-LDFLAGS="-m elf32lriscv -T scripts/linker.ld -nostdlib"
+LDFLAGS="-m elf32lriscv -T scripts/linker.ld -nostdlib --no-warn-rwx-segments"
 
 echo "--- Building $SOURCE_FILE in directory: $DIR_NAME ---"
 # Step 1: Compile Helpers (start.S & syscalls.c)
