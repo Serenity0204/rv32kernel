@@ -1,6 +1,5 @@
 #pragma once
 #include "Common.hpp"
-#include "Utils.hpp"
 
 enum class Opcode : uint8_t
 {

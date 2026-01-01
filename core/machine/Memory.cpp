@@ -1,4 +1,7 @@
 #include "Memory.hpp"
+#include <assert.h>
+#include <fstream>
+#include <iostream>
 
 bool loadBinary(const std::string& filename, Memory& memory)
 {

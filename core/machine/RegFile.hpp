@@ -2,7 +2,7 @@
 
 #include "Common.hpp"
 #include <array>
-#include <assert.h>
+
 #include <cstddef>
 
 class RegFile

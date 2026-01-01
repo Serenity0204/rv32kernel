@@ -1,4 +1,8 @@
 #include "CPU.hpp"
+#include "Bus.hpp"
+#include "Decoder.hpp"
+#include "Executor.hpp"
+#include "Utils.hpp"
 
 CPU::CPU(Bus& bus_ref) : bus(bus_ref)
 {
@@ -282,7 +286,7 @@ void CPU::execute(Word instr)
         {
             Word imm = Decoder::immI(instr);
             if (imm == 0)
-                Executor::execECALL(*this, instr);
+                Executor::execECALL(*this);
             else
                 illegal(instr, "SYSTEM imm must be 0 (ECALL)");
             break;

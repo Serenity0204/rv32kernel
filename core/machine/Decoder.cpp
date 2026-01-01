@@ -1,4 +1,5 @@
 #include "Decoder.hpp"
+#include "Utils.hpp"
 
 Opcode Decoder::opcode(Word instr)
 {

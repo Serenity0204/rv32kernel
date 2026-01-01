@@ -1,4 +1,5 @@
 #include "RegFile.hpp"
+#include <assert.h>
 
 RegFile::RegFile()
 {

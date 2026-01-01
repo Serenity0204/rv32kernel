@@ -1,9 +1,5 @@
 #pragma once
-#include "CPU.hpp"
 #include "Common.hpp"
-#include "Decoder.hpp"
-#include "Utils.hpp"
-#include <limits>
 
 class CPU;
 
@@ -55,7 +51,7 @@ public:
     // static void execCSRRCI(CPU& cpu, Word instr);
 
     // // System
-    static void execECALL(CPU& cpu, Word instr);
+    static void execECALL(CPU& cpu);
     // static void execEBREAK(CPU& cpu, Word instr);
     // static void execSRET(CPU& cpu, Word instr);
     // static void execURET(CPU& cpu, Word instr);

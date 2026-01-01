@@ -1,10 +1,10 @@
 #pragma once
-#include "Bus.hpp"
+
 #include "Common.hpp"
-#include "Decoder.hpp"
-#include "Executor.hpp"
 #include "RegFile.hpp"
-#include "Utils.hpp"
+
+class Bus;
+class Executor;
 
 class CPU
 {
