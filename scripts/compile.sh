@@ -11,6 +11,7 @@ SOURCE_FILE="$1"
 # Extract directory and base filename
 DIR_NAME=$(dirname "$SOURCE_FILE")
 BASE_NAME=$(basename "$SOURCE_FILE" .c)
+INCLUDE_DIRS="-Ilib -Iprograms"
 
 # Construct full paths for output files
 OBJ_FILE="${DIR_NAME}/${BASE_NAME}.o"
@@ -20,9 +21,11 @@ BIN_FILE="${DIR_NAME}/${BASE_NAME}.bin"
 # Lib related
 LIB_DIR="lib"
 START_SRC="${LIB_DIR}/start.S"
-SYSCALL_SRC="${LIB_DIR}/syscall.c"
 START_OBJ="${LIB_DIR}/start.o"
+SYSCALL_SRC="${LIB_DIR}/syscall.c"
 SYSCALL_OBJ="${LIB_DIR}/syscall.o"
+STDIO_SRC="${LIB_DIR}/stdio.c"
+STDIO_OBJ="${LIB_DIR}/stdio.o"
 
 
 # Toolchain Variables
@@ -38,8 +41,9 @@ echo "--- Building $SOURCE_FILE in directory: $DIR_NAME ---"
 # Step 1: Compile Helpers (start.S & syscalls.c)
 if [ ! -f "$START_OBJ" ] || [ ! -f "$SYSCALL_OBJ" ]; then
     echo "[1/5] Compiling System Libs..."
-    $CC $CFLAGS "$START_SRC" -o "$START_OBJ"
-    $CC $CFLAGS "$SYSCALL_SRC" -o "$SYSCALL_OBJ"
+    $CC $CFLAGS $INCLUDE_DIRS "$START_SRC" -o "$START_OBJ"
+    $CC $CFLAGS $INCLUDE_DIRS "$SYSCALL_SRC" -o "$SYSCALL_OBJ"
+    $CC $CFLAGS $INCLUDE_DIRS "$STDIO_SRC" -o "$STDIO_OBJ"
 else
     echo "[1/5] System Libs already compiled."
 fi
@@ -47,12 +51,12 @@ fi
 
 # Step 2: Compile to Object file
 echo "[2/5] Compiling..."
-$CC $CFLAGS "$SOURCE_FILE" -o "$OBJ_FILE"
+$CC $CFLAGS $INCLUDE_DIRS "$SOURCE_FILE" -o "$OBJ_FILE"
 if [ $? -ne 0 ]; then echo "Error: Compilation failed"; exit 1; fi
 
 # Step 3: Link
 echo "[3/5] Linking..."
-$LD $LDFLAGS "$START_OBJ" "$SYSCALL_OBJ" "$OBJ_FILE" -o "$ELF_FILE"
+$LD $LDFLAGS "$START_OBJ" "$SYSCALL_OBJ" "$STDIO_OBJ" "$OBJ_FILE" -o "$ELF_FILE"
 if [ $? -ne 0 ]; then echo "Error: Linking failed"; exit 1; fi
 
 # Step 4: Convert to Binary

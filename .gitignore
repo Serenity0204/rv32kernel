@@ -3,6 +3,7 @@ rv32sysemu
 .vscode/
 
 programs/*.bin
+programs/*.o
 
-lib/start.o
-lib/syscall.o
+lib/*.o
+lib/*.bin
