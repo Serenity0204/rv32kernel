@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Common.hpp"
+#include "MMU.hpp"
 #include "RegFile.hpp"
 
 class Bus;
@@ -21,21 +22,29 @@ public:
     inline Addr getPC() { return this->pc; }
     inline void advancePC() { this->pc += 4; }
 
+    // memory
+    inline Word loadVirtualMemory(Addr vaddr, std::size_t size) { return this->mmu.loadVirtualMemory(vaddr, size); }
+    inline void storeVirtualMemory(Addr vaddr, std::size_t size, Word value) { this->mmu.storeVirtualMemory(vaddr, size, value); }
+    inline Word loadPhysicalMemory(Addr paddr, std::size_t size) { return this->mmu.loadPhysicalMemory(paddr, size); }
+    inline void storePhysicalMemory(Addr paddr, std::size_t size, Word value) { this->mmu.storePhysicalMemory(paddr, size, value); }
+
     // reg
     inline Word readReg(std::size_t index) { return this->regs[index]; }
     inline void writeReg(std::size_t index, Word value) { this->regs.write(index, value); }
-    // memory
-    Word load(Addr addr, std::size_t size);
-    void store(Addr addr, std::size_t size, Word value);
+
+    // VM Control
+    inline void setPageTable(PageTable* table) { this->mmu.setPageTable(table); }
+    inline void enableVM(bool enabled) { this->mmu.enableVM(enabled); }
 
     // status
     inline bool isHalted() { return this->halted; }
     inline void halt() { this->halted = true; }
 
 private:
+    // kernel related
     bool halted;
-    Bus& bus;
     RegFile regs;
+    MMU mmu;
     Addr pc;
 
     Word fetch();

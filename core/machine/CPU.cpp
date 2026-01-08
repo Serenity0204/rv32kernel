@@ -1,26 +1,27 @@
 #include "CPU.hpp"
 #include "Bus.hpp"
 #include "Decoder.hpp"
+#include "Exception.hpp"
 #include "Executor.hpp"
 #include "Utils.hpp"
 
-CPU::CPU(Bus& bus_ref) : bus(bus_ref)
+CPU::CPU(Bus& bus_ref) : mmu(bus_ref)
 {
     this->reset();
 }
 
 void CPU::reset()
 {
+    this->mmu.reset();
     this->halted = false;
     this->pc = MEMORY_BASE;
     this->regs.reset();
-
     this->regs.write(2, MEMORY_BASE + MEMORY_SIZE);
 }
 
 Word CPU::fetch()
 {
-    return this->bus.load(this->pc, 4);
+    return this->mmu.fetch(this->pc);
 }
 
 void CPU::execute(Word instr)
@@ -329,14 +330,4 @@ void CPU::dumpRegisters()
     {
         std::cout << "x" << std::dec << i << ": " << std::hex << this->regs[i] << "\n";
     }
-}
-
-Word CPU::load(Addr addr, std::size_t size)
-{
-    return this->bus.load(addr, size);
-}
-
-void CPU::store(Addr addr, std::size_t size, Word value)
-{
-    this->bus.store(addr, size, value);
 }
