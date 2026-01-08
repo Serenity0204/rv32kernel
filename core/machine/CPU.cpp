@@ -5,7 +5,7 @@
 #include "Executor.hpp"
 #include "Utils.hpp"
 
-CPU::CPU(Bus& bus_ref) : mmu(bus_ref)
+CPU::CPU()
 {
     this->reset();
 }

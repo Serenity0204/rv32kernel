@@ -11,7 +11,7 @@ class CPU
 {
 public:
     friend class Executor;
-    CPU(Bus& bus_ref);
+    CPU();
     ~CPU() = default;
 
     void step();

@@ -5,7 +5,7 @@
 class MMU
 {
 public:
-    MMU(Bus& bus_ref);
+    MMU();
     ~MMU() = default;
 
     // virtual memory
@@ -25,7 +25,7 @@ public:
     void reset();
 
 private:
-    Bus& bus;
+    Bus bus;
     PageTable* currentTable;
     bool vmEnabled;
 

@@ -1,7 +1,7 @@
 #include "MMU.hpp"
 #include "Exception.hpp"
 
-MMU::MMU(Bus& bus_ref) : bus(bus_ref)
+MMU::MMU()
 {
     this->reset();
 }
