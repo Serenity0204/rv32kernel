@@ -14,22 +14,24 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    // init
-    Memory memory;
     std::string filename = std::string(argv[1]);
-    bool good = loadBinary(filename, memory);
+    // bool good = loadBinary(filename, memory);
 
+    // if (!good)
+    // {
+    //     std::cout << "Failed to load binary.\n";
+    //     return 1;
+    // }
+
+    Kernel kernel;
+
+    bool good = loadBinary(filename, &kernel);
     if (!good)
     {
         std::cout << "Failed to load binary.\n";
         return 1;
     }
-    Bus bus(memory);
-    CPU cpu(bus);
-    cpu.reset();
-    Kernel kernel(cpu);
-
     kernel.run();
 
-    return 1;
+    return 0;
 }
