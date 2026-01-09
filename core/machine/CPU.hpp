@@ -21,6 +21,7 @@ public:
     // PC
     inline Addr getPC() { return this->pc; }
     inline void advancePC() { this->pc += 4; }
+    inline void setPC(Addr newPc) { this->pc = newPc; }
 
     // memory
     inline Word loadVirtualMemory(Addr vaddr, std::size_t size) { return this->mmu.loadVirtualMemory(vaddr, size); }
@@ -31,6 +32,7 @@ public:
     // reg
     inline Word readReg(std::size_t index) { return this->regs[index]; }
     inline void writeReg(std::size_t index, Word value) { this->regs.write(index, value); }
+    inline RegFile& getRegs() { return this->regs; }
 
     // VM Control
     inline void setPageTable(PageTable* table) { this->mmu.setPageTable(table); }
