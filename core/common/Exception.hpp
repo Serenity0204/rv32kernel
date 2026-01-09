@@ -1,5 +1,5 @@
 #pragma once
-#include "Syscall.hpp"
+#include "SyscallDefinition.hpp"
 #include <exception>
 #include <string>
 

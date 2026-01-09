@@ -24,3 +24,8 @@ const Addr STACK_TOP = MEMORY_BASE + MEMORY_SIZE;
 
 // 8MB below top
 const Addr STACK_LIMIT = STACK_TOP - (8 * 1024 * 1024);
+
+const int MAX_PROCESS = 8;
+
+// Switch every 100 instructions
+const int TIME_QUANTUM = 100;
