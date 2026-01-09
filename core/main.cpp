@@ -7,7 +7,7 @@
 
 int main(int argc, char* argv[])
 {
-    std::cout << "RISCV Emulator\n";
+    std::cout << "rv32sysemu entry:\n";
     if (argc < 2)
     {
         std::cout << "Usage: ./rv32sysemu <bin_file>\n";
@@ -15,22 +15,22 @@ int main(int argc, char* argv[])
     }
 
     std::string filename = std::string(argv[1]);
-    // bool good = loadBinary(filename, memory);
-
-    // if (!good)
-    // {
-    //     std::cout << "Failed to load binary.\n";
-    //     return 1;
-    // }
 
     Kernel kernel;
 
-    bool good = loadBinary(filename, &kernel);
+    bool good = kernel.createProcess(filename);
     if (!good)
     {
-        std::cout << "Failed to load binary.\n";
+        std::cout << "Failed to create process.\n";
         return 1;
     }
+    good = kernel.createProcess(filename);
+    if (!good)
+    {
+        std::cout << "Failed to create process.\n";
+        return 1;
+    }
+
     kernel.run();
 
     return 0;
