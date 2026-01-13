@@ -1,5 +1,7 @@
 #include "MMU.hpp"
 #include "Exception.hpp"
+#include "Logger.hpp"
+#include "Utils.hpp"
 
 MMU::MMU()
 {
@@ -24,13 +26,13 @@ void MMU::enableVM(bool enabled)
 
 Word MMU::loadVirtualMemory(Addr vaddr, std::size_t size)
 {
-    Addr paddr = this->translate(vaddr);
+    Addr paddr = this->translate(vaddr, false, false);
     return this->bus.load(paddr, size);
 }
 
 void MMU::storeVirtualMemory(Addr vaddr, std::size_t size, Word value)
 {
-    Addr paddr = this->translate(vaddr);
+    Addr paddr = this->translate(vaddr, true, false);
     this->bus.store(paddr, size, value);
 }
 
@@ -47,11 +49,11 @@ void MMU::storePhysicalMemory(Addr paddr, std::size_t size, Word value)
 Word MMU::fetch(Addr vaddr)
 {
     // Fetch is always 4 bytes
-    Addr paddr = this->translate(vaddr);
+    Addr paddr = this->translate(vaddr, false, true);
     return this->bus.load(paddr, 4);
 }
 
-Addr MMU::translate(Addr vaddr)
+Addr MMU::translate(Addr vaddr, bool isWrite, bool isExec)
 {
     if (!this->vmEnabled) return vaddr;
 
@@ -59,8 +61,28 @@ Addr MMU::translate(Addr vaddr)
     uint32_t offset = (vaddr & 0xFFF);
 
     if (this->currentTable == nullptr || this->currentTable->count(vpn) == 0) throw PageFaultException(vaddr);
+    PTE& pte = this->currentTable->at(vpn);
 
-    Addr pte = this->currentTable->at(vpn);
-    Addr ppn = (pte & 0xFFFFF000);
-    return ppn | offset;
+    if (!pte.valid) throw PageFaultException(vaddr);
+
+    if (isExec && !pte.canExecute)
+    {
+        LOG(MMU, ERROR, "Execution Violation at " + Utils::toHex(vaddr));
+        throw PageFaultException(vaddr);
+    }
+    if (isWrite && !pte.canWrite)
+    {
+        LOG(MMU, ERROR, "Write Violation at " + Utils::toHex(vaddr));
+        throw PageFaultException(vaddr);
+    }
+    if (!isWrite && !isExec && !pte.canRead)
+    {
+        LOG(MMU, ERROR, "Read Violation at " + Utils::toHex(vaddr));
+        throw PageFaultException(vaddr);
+    }
+
+    pte.referenced = true;
+    if (isWrite) pte.dirty = true;
+
+    return (pte.ppn << 12) | offset;
 }

@@ -1,15 +1,7 @@
 #pragma once
-
+#include "Types.hpp"
 #include <cstdint>
 #include <iostream>
-#include <unordered_map>
-
-// riscv32i
-using Byte = uint8_t;
-using Half = uint16_t;
-using Word = uint32_t;
-using Addr = uint32_t;
-using PageTable = std::unordered_map<Addr, Addr>;
 
 // Memory
 const Addr MEMORY_BASE = 0x00000000;

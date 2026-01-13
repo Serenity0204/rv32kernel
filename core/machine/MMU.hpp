@@ -1,6 +1,7 @@
 #pragma once
 #include "Bus.hpp"
 #include "Common.hpp"
+#include "PTE.hpp"
 
 class MMU
 {
@@ -29,5 +30,5 @@ private:
     PageTable* currentTable;
     bool vmEnabled;
 
-    Addr translate(Addr vaddr);
+    Addr translate(Addr vaddr, bool isWrite, bool isExec);
 };
