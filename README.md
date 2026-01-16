@@ -90,3 +90,11 @@ Physical Frames Used     :          2
  Paging Rate: 0.0894% (Faults/Instr)
 ============================================
 ```
+
+## Todo
+- [ ] Swap and Page Eviction
+- [ ] Virtual Disk
+- [ ] More Syscalls
+- [ ] Filesystem
+- [ ] Configurable Scheduling/Swap Policies
+
