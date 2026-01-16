@@ -15,11 +15,6 @@ public:
     std::vector<Process*> processList;
     int currentProcessIndex = -1;
 
-    inline bool isRunning()
-    {
-        return this->cpu.isHalted();
-    }
-
     KernelContext()
     {
         this->pmm.init();
