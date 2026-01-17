@@ -19,5 +19,13 @@ const Addr STACK_LIMIT = STACK_TOP - (8 * 1024 * 1024);
 
 const int MAX_PROCESS = 8;
 
-// Switch every 100 instructions
-const int TIME_QUANTUM = 100;
+// for context switch
+const int TIME_QUANTUM = 1000;
+
+// constants for timer modeling
+const std::size_t USER_MODE_TICK_TIME = 1;
+const std::size_t ENTER_KERNEL_MODE_TIME = 20;
+const std::size_t CONTEXT_SWITCH_TIME = 50;
+const std::size_t SYSCALL_BASE_TIME = 10;
+const std::size_t MEMORY_ALLOCATION_TIME = 100;
+const std::size_t DISK_IO_TIME = 5000;

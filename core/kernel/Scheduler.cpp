@@ -25,6 +25,13 @@ void Scheduler::yield()
 
     if (!found)
     {
+        bool canRunCurrentProcess = this->checkCurrentProcessRunnable();
+        if (canRunCurrentProcess)
+        {
+            this->ctx->timer.reset();
+            return;
+        }
+
         // Check if everyone is terminated
         bool allDead = this->checkAllTerminated();
         if (allDead)
@@ -35,6 +42,9 @@ void Scheduler::yield()
         return;
     }
 
+    // reset the timer
+    this->ctx->timer.reset();
+
     // Perform Switch
     if (nextIndex != this->ctx->currentProcessIndex)
     {
@@ -43,9 +53,11 @@ void Scheduler::yield()
         this->contextSwitch(nextIndex);
     }
 }
+
 void Scheduler::contextSwitch(std::size_t nextIndex)
 {
     STATS.incContextSwitches();
+    this->ctx->timer.tick(CONTEXT_SWITCH_TIME);
 
     Process* nextProcess = this->ctx->processList[nextIndex];
 
@@ -67,6 +79,15 @@ void Scheduler::contextSwitch(std::size_t nextIndex)
     nextProcess->setState(ProcessState::RUNNING);
 
     this->ctx->currentProcessIndex = nextIndex;
+}
+
+bool Scheduler::checkCurrentProcessRunnable()
+{
+    if (this->ctx->currentProcessIndex == -1) return false;
+
+    Process* current = this->ctx->processList[this->ctx->currentProcessIndex];
+    if (current->getState() == ProcessState::RUNNING) return true;
+    return false;
 }
 
 bool Scheduler::checkAllTerminated()

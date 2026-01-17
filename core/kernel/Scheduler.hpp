@@ -11,6 +11,7 @@ public:
 private:
     void contextSwitch(std::size_t nextIndex);
     bool checkAllTerminated();
+    bool checkCurrentProcessRunnable();
 
 private:
     KernelContext* ctx;

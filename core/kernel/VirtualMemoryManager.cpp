@@ -28,13 +28,15 @@ bool VirtualMemoryManager::handlePageFault(Addr faultAddr)
     // If it's not stack, it's a real crash (SegFault)
     LOG(KERNEL, ERROR, "Segmentation Fault: Invalid access at " + Utils::toHex(faultAddr));
     process->setState(ProcessState::TERMINATED);
-    return true;
+    return false;
 }
 
 bool VirtualMemoryManager::handleStackGrowth(Process* proc, Addr faultAddr, Addr vpn)
 {
     if (faultAddr >= STACK_LIMIT && faultAddr < STACK_TOP)
     {
+        this->ctx->timer.tick(MEMORY_ALLOCATION_TIME);
+
         Addr paddr = this->ctx->pmm.allocateFrame();
 
         PTE& pte = (*proc->getPageTable())[vpn];
@@ -58,6 +60,8 @@ bool VirtualMemoryManager::handleLazyLoading(Process* proc, Addr faultAddr, Addr
         // if fault within this segment
         if (faultAddr >= seg.vaddr && faultAddr < seg.vaddr + seg.memSize)
         {
+            this->ctx->timer.tick(MEMORY_ALLOCATION_TIME);
+
             Addr paddr = this->ctx->pmm.allocateFrame();
             STATS.incAllocatedFrames();
             // Calculate offsets
@@ -69,8 +73,11 @@ bool VirtualMemoryManager::handleLazyLoading(Process* proc, Addr faultAddr, Addr
             // Logic: Read from file if within fileSize; otherwise 0 (BSS)
             if (offsetInSegment < seg.fileSize)
             {
+                this->ctx->timer.tick(DISK_IO_TIME);
+
                 size_t bytesToRead = std::min((size_t)PAGE_SIZE, seg.fileSize - offsetInSegment);
                 std::ifstream file(proc->getName(), std::ios::binary);
+
                 file.seekg(filePos);
                 file.read(buffer.data(), bytesToRead);
                 STATS.incDiskReads();

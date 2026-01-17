@@ -14,18 +14,6 @@ bool Kernel::createProcess(const std::string& filename)
     return this->loader.loadELF(filename);
 }
 
-void Kernel::runFirstProcess()
-{
-    this->ctx.currentProcessIndex = 0;
-    Process* first = this->ctx.processList[0];
-    this->ctx.cpu.getRegs() = first->getRegs();
-    this->ctx.cpu.setPC(first->getPC());
-
-    this->ctx.cpu.setPageTable(first->getPageTable());
-    this->ctx.cpu.enableVM(true);
-    first->setState(ProcessState::RUNNING);
-}
-
 void Kernel::run()
 {
     // ADMISSION: Move NEW -> READY
@@ -36,33 +24,45 @@ void Kernel::run()
         return;
     }
 
+    this->ctx.cpu.enableVM(true);
+
     // start the first process
-    this->runFirstProcess();
+    this->scheduler.yield();
 
     LOG(KERNEL, INFO, "Simulation started...");
-    // for context switching only
-    uint64_t instructions = 0;
 
     while (!this->ctx.cpu.isHalted())
     {
         try
         {
-            this->ctx.cpu.step();
             STATS.incInstructions();
-            instructions++;
+            this->ctx.cpu.step();
+            this->ctx.timer.tick(USER_MODE_TICK_TIME);
             this->ctx.cpu.advancePC();
         }
         catch (SyscallException& sys)
         {
+            this->ctx.timer.tick(ENTER_KERNEL_MODE_TIME);
+
             // will handle pc increment individually, exit will yield
-            if (this->syscalls.dispatch(sys.getSyscallID()))
+            bool exited = this->syscalls.dispatch(sys.getSyscallID());
+            if (exited)
+            {
                 this->scheduler.yield();
+                continue;
+            }
         }
         catch (PageFaultException& pf)
         {
+            this->ctx.timer.tick(ENTER_KERNEL_MODE_TIME);
+            bool pageFaultHandled = this->vmm.handlePageFault(pf.getFaultAddr());
             // If VMM returns false, it was a crash -> reschedule
-            if (!this->vmm.handlePageFault(pf.getFaultAddr()))
+            bool crashed = !pageFaultHandled;
+            if (crashed)
+            {
                 this->scheduler.yield();
+                continue;
+            }
         }
         catch (std::exception& e)
         {
@@ -71,7 +71,11 @@ void Kernel::run()
             break;
         }
 
-        if (instructions % TIME_QUANTUM == 0) this->scheduler.yield();
+        if (this->ctx.timer.isInterruptPending())
+        {
+            LOG(KERNEL, INFO, "Timer Interrupt.");
+            this->scheduler.yield();
+        }
     }
 
     STATS.printSummary();

@@ -15,9 +15,6 @@ public:
     bool createProcess(const std::string& filename);
 
 private:
-    void runFirstProcess();
-
-private:
     KernelContext ctx;
 
 private:

@@ -6,29 +6,32 @@
 #include <unistd.h>
 #include <vector>
 
-
 SyscallHandler::SyscallHandler(KernelContext* context) : ctx(context) {}
 
 bool SyscallHandler::dispatch(SyscallID id)
 {
 
     STATS.incSyscalls();
+    bool processExited = false;
 
     switch (id)
     {
     case SyscallID::SYS_EXIT:
-        return handleExit();
+        processExited = handleExit();
+        break;
     case SyscallID::SYS_WRITE:
         this->handleWrite();
-        return false;
+        break;
     case SyscallID::SYS_READ:
         this->handleRead();
-        return false;
+        break;
     default:
         LOG(SYSCALL, ERROR, "Unimplemented syscall id: " + std::to_string((int)id));
         this->ctx->cpu.halt();
-        return false;
+        break;
     }
+
+    return processExited;
 }
 
 bool SyscallHandler::handleExit()
@@ -53,6 +56,10 @@ void SyscallHandler::handleWrite()
     Word rawFD = this->ctx->cpu.readReg(10);
     Word addr = this->ctx->cpu.readReg(11);
     Word count = this->ctx->cpu.readReg(12);
+
+    // 2 cycles per byte for modeling
+    size_t copyCost = count * 2;
+    this->ctx->timer.tick(SYSCALL_BASE_TIME + copyCost);
 
     FileDescriptor fd = static_cast<FileDescriptor>(rawFD);
     if (fd == FileDescriptor::STDOUT || fd == FileDescriptor::STDERR)
@@ -86,6 +93,11 @@ void SyscallHandler::handleRead()
     Word rawFD = this->ctx->cpu.readReg(10);
     Word addr = this->ctx->cpu.readReg(11);
     Word count = this->ctx->cpu.readReg(12);
+
+    // 2 cycles per byte for modeling
+    size_t copyCost = count * 2;
+    this->ctx->timer.tick(SYSCALL_BASE_TIME + copyCost);
+
     FileDescriptor fd = static_cast<FileDescriptor>(rawFD);
     if (fd == FileDescriptor::STDIN)
     {

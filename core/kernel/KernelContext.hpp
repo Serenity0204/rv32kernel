@@ -3,6 +3,7 @@
 #include "PhysicalMemoryManager.hpp"
 #include "Process.hpp"
 #include "Stats.hpp"
+#include "Timer.hpp"
 #include <vector>
 
 using ProcessState = Process::ProcessState;
@@ -14,8 +15,9 @@ public:
     PhysicalMemoryManager pmm;
     std::vector<Process*> processList;
     int currentProcessIndex = -1;
+    Timer timer;
 
-    KernelContext()
+    KernelContext() : timer(TIME_QUANTUM)
     {
         this->pmm.init();
     }
