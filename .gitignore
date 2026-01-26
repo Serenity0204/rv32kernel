@@ -8,3 +8,4 @@ programs/*.elf
 
 lib/*.o
 lib/*.bin
+log.txt

@@ -33,7 +33,7 @@ CC=riscv64-unknown-elf-gcc
 LD=riscv64-unknown-elf-ld
 
 # Flags
-CFLAGS="-march=rv32im -mabi=ilp32 -c -nostdlib -fno-builtin -mno-relax"
+CFLAGS="-march=rv32im -mabi=ilp32 -c -nostdlib -nostdinc -fno-builtin -mno-relax"
 LDFLAGS="-m elf32lriscv -T scripts/linker.ld -nostdlib --no-warn-rwx-segments"
 
 echo "--- Building $SOURCE_FILE in directory: $DIR_NAME ---"

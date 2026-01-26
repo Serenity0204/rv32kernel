@@ -1,7 +1,7 @@
 /* ===============================
    Manual Memory Pool
    =============================== */
-
+#include "syscall.h"
 #define POOL_SIZE 1024
 
 static unsigned char memory_pool[POOL_SIZE];

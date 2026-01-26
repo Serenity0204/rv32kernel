@@ -1,3 +1,5 @@
+#include "syscall.h"
+
 long long factorial(int n)
 {
     if (n == 0 || n == 1)

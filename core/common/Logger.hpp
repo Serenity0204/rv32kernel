@@ -1,4 +1,5 @@
 #pragma once
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -33,64 +34,67 @@ public:
     // Main Log Function
     void log(LogSource source, LogLevel level, const std::string& message)
     {
-        std::lock_guard<std::mutex> lock(logMutex);
+        std::lock_guard<std::mutex> lock(this->logMutex);
 
-        const std::string RESET = "\033[0m";
-        const std::string RED = "\033[31m";
-        const std::string GREEN = "\033[32m";
-        const std::string YELLOW = "\033[33m";
-        const std::string CYAN = "\033[36m";
-        const std::string BLUE = "\033[34m";
-        const std::string MAGENTA = "\033[35m";
+        if (!this->logFile.is_open()) return;
 
         std::string sourceStr = "";
-        std::string color = RESET;
 
+        // Map Source to String
         switch (source)
         {
         case LogSource::KERNEL:
             sourceStr = "[KERNEL   ]";
-            color = GREEN;
             break;
         case LogSource::SCHEDULER:
             sourceStr = "[SCHEDULER]";
-            color = CYAN;
             break;
         case LogSource::SYSCALL:
             sourceStr = "[SYSCALL  ]";
-            color = BLUE;
             break;
         case LogSource::MMU:
             sourceStr = "[MMU      ]";
-            color = MAGENTA;
             break;
         case LogSource::LOADER:
             sourceStr = "[LOADER   ]";
-            color = YELLOW;
             break;
         case LogSource::CPU:
             sourceStr = "[CPU      ]";
-            color = RESET;
             break;
         }
 
         if (level == LogLevel::ERROR)
         {
-            std::cerr << RED << sourceStr << " ERROR: " << message << RESET << std::endl;
+            this->logFile << sourceStr << " ERROR: " << message << std::endl;
             return;
         }
         if (level == LogLevel::WARNING)
         {
-            std::cout << YELLOW << sourceStr << " WARN: " << message << RESET << std::endl;
+            this->logFile << sourceStr << " WARN: " << message << std::endl;
             return;
         }
 
-        std::cout << color << sourceStr << RESET << " " << message << std::endl;
+        this->logFile << sourceStr << " " << message << std::endl;
     }
 
 private:
-    Logger() = default;
+    Logger()
+    {
+        // Open log.txt in truncate mode (clears the file every time you run)
+        logFile.open("log.txt", std::ios::out | std::ios::trunc);
+        if (!logFile)
+        {
+            std::cout << "Cannot open logfile, kernel crashed.\n";
+            exit(1);
+        }
+    }
+    ~Logger()
+    {
+        if (logFile.is_open())
+            this->logFile.close();
+    }
     std::mutex logMutex;
+    std::ofstream logFile;
 };
 
 #define LOG(source, level, msg) Logger::getInstance().log(LogSource::source, LogLevel::level, msg)
