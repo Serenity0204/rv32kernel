@@ -9,14 +9,15 @@ VirtualMemoryManager::VirtualMemoryManager(KernelContext* context) : ctx(context
 bool VirtualMemoryManager::handlePageFault(Addr faultAddr)
 {
     STATS.incPageFaults();
+    Thread* currentThread = this->ctx->getCurrentThread();
 
-    if (this->ctx->currentProcessIndex == -1)
+    if (currentThread == nullptr)
     {
         this->ctx->cpu.halt();
         return false;
     }
 
-    Process* process = this->ctx->processList[this->ctx->currentProcessIndex];
+    Process* process = currentThread->getProcess();
     Addr vpn = faultAddr >> 12;
 
     // if it's under stack limit, allocate one physical page and set the page table entry
@@ -27,29 +28,46 @@ bool VirtualMemoryManager::handlePageFault(Addr faultAddr)
 
     // If it's not stack, it's a real crash (SegFault)
     LOG(KERNEL, ERROR, "Segmentation Fault: Invalid access at " + Utils::toHex(faultAddr));
-    process->setState(ProcessState::TERMINATED);
+
+    // terminate all threads related to this segfault process
+    std::vector<Thread*>& allThreads = process->getThreads();
+    for (Thread* thread : allThreads)
+        thread->setState(ThreadState::TERMINATED);
+
     return false;
 }
 
 bool VirtualMemoryManager::handleStackGrowth(Process* proc, Addr faultAddr, Addr vpn)
 {
-    if (faultAddr >= STACK_LIMIT && faultAddr < STACK_TOP)
+    // not even a stack region
+    if (faultAddr < STACK_REGION_BOTTOM || faultAddr >= STACK_TOP) return false;
+
+    for (Thread* t : proc->getThreads())
     {
-        this->ctx->timer.tick(MEMORY_ALLOCATION_TIME);
+        Addr stackTop = t->getStackTop();
+        size_t stackSize = (t->getTid() == 0) ? MAIN_STACK_SIZE : THREAD_STACK_SIZE;
+        Addr stackBottom = stackTop - stackSize;
 
-        Addr paddr = this->ctx->pmm.allocateFrame();
+        if (faultAddr >= stackBottom && faultAddr < stackTop)
+        {
+            this->ctx->timer.tick(MEMORY_ALLOCATION_TIME);
 
-        PTE& pte = (*proc->getPageTable())[vpn];
-        pte.ppn = paddr >> 12;
-        pte.valid = true;
-        pte.canRead = true;
-        pte.canWrite = true;
-        pte.referenced = true;
+            Addr paddr = this->ctx->pmm.allocateFrame();
 
-        STATS.incAllocatedFrames();
-        LOG(MMU, DEBUG, "Stack Page Allocated: " + Utils::toHex(faultAddr));
-        return true;
+            PTE& pte = (*proc->getPageTable())[vpn];
+            pte.ppn = paddr >> 12;
+            pte.valid = true;
+            pte.canRead = true;
+            pte.canWrite = true;
+            pte.referenced = true;
+
+            STATS.incAllocatedFrames();
+            LOG(MMU, DEBUG, "Stack Page Allocated: " + Utils::toHex(faultAddr));
+            return true;
+        }
     }
+
+    LOG(MMU, WARNING, "Stack Overflow / Guard Page Hit at " + Utils::toHex(faultAddr));
     return false;
 }
 

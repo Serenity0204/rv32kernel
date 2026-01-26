@@ -29,9 +29,6 @@ bool Loader::loadELF(const std::string& filename)
     int newPid = this->ctx->processList.size() + 1;
     Process* process = new Process(newPid, filename);
 
-    // set PC entry for that process
-    process->setPC(ehdr.e_entry);
-
     // Parse Program Headers (Segments)
     file.seekg(ehdr.e_phoff);
 
@@ -54,7 +51,19 @@ bool Loader::loadELF(const std::string& filename)
         LOG(LOADER, INFO, "Segment: " + Utils::toHex(seg.vaddr) + " Size: " + std::to_string(seg.memSize) + " Flags: " + std::to_string(seg.flags));
     }
 
+    Thread* mainThread = process->createThread(ehdr.e_entry, 0);
+    if (mainThread == nullptr)
+    {
+        // create main thread fails, kill the process
+        delete process;
+        LOG(LOADER, ERROR, "Create process failed " + filename);
+        return false;
+    }
+    mainThread->setState(ThreadState::READY);
+
+    this->ctx->activeThreads.push_back(mainThread);
     this->ctx->processList.push_back(process);
+
     LOG(LOADER, INFO, "Created Process " + std::to_string(newPid) + ": " + filename);
     return true;
 }

@@ -2,6 +2,7 @@
 #include "Common.hpp"
 #include "PTE.hpp"
 #include "RegFile.hpp"
+#include "Thread.hpp"
 #include <string>
 #include <vector>
 
@@ -17,14 +18,6 @@ struct Segment
 
 class Process
 {
-public:
-    enum class ProcessState : int
-    {
-        NEW,
-        READY,
-        RUNNING,
-        TERMINATED
-    };
 
 private:
     struct PCB
@@ -32,20 +25,17 @@ private:
         // info
         int pid;
         std::string name;
-        ProcessState state;
 
-        // hardware context
-        Addr pc;
-        RegFile regs;
+        // shared info
         PageTable* pageTable;
-        // elf segments
         std::vector<Segment> segments;
+        std::vector<Thread*> threads;
+        Addr nextStackBase;
 
-        PCB(int id, std::string n) : pid(id), name(n), state(ProcessState::NEW), pc(MEMORY_BASE)
+        PCB(int id, std::string n) : pid(id), name(n)
         {
-            this->regs.reset();
-            this->regs.write(2, STACK_TOP);
             this->pageTable = new PageTable();
+            this->nextStackBase = STACK_TOP;
         }
         ~PCB()
         {
@@ -54,6 +44,8 @@ private:
                 delete this->pageTable;
                 this->pageTable = nullptr;
             }
+            for (Thread* thread : this->threads) delete thread;
+            this->threads.clear();
         }
     };
 
@@ -61,15 +53,15 @@ public:
     Process(int id, std::string name);
     ~Process();
 
+    Thread* createThread(Addr entryPC, Word arg);
+
+public:
+    // getters
     inline int getPid() const { return this->pcb->pid; }
     inline std::string getName() const { return this->pcb->name; }
-    inline ProcessState getState() const { return this->pcb->state; }
-    inline void setState(ProcessState newState) { this->pcb->state = newState; }
-    inline Addr getPC() const { return this->pcb->pc; }
-    inline void setPC(Addr newPC) { this->pcb->pc = newPC; }
-    inline RegFile& getRegs() { return this->pcb->regs; }
     inline PageTable* getPageTable() { return this->pcb->pageTable; }
     inline std::vector<Segment>& getSegments() { return this->pcb->segments; }
+    inline std::vector<Thread*>& getThreads() { return this->pcb->threads; }
 
 private:
     PCB* pcb;

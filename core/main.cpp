@@ -23,13 +23,6 @@ int main(int argc, char* argv[])
         std::cout << "Failed to create process.\n";
         return 1;
     }
-    good = kernel.createProcess(filename);
-    if (!good)
-    {
-        std::cout << "Failed to create process.\n";
-        return 1;
-    }
-
     kernel.run();
 
     return 0;

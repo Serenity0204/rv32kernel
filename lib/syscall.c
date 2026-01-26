@@ -18,3 +18,8 @@ int read(int fd, void* buf, int count)
     if (count < 0) return -1;
     return syscall(SYS_READ, fd, buf, count);
 }
+
+int thread_create(void (*func)(void*), void* arg)
+{
+    return syscall(SYS_THREAD_CREATE, (int)func, (int)arg);
+}

@@ -6,15 +6,16 @@
 #include "Timer.hpp"
 #include <vector>
 
-using ProcessState = Process::ProcessState;
-
 struct KernelContext
 {
 public:
     CPU cpu;
     PhysicalMemoryManager pmm;
     std::vector<Process*> processList;
-    int currentProcessIndex = -1;
+
+    std::vector<Thread*> activeThreads;
+    int currentThreadIndex = -1;
+
     Timer timer;
 
     KernelContext() : timer(TIME_QUANTUM)
@@ -26,5 +27,14 @@ public:
     {
         for (auto* p : this->processList) delete p;
         this->processList.clear();
+        this->activeThreads.clear();
+    }
+
+    inline Thread* getCurrentThread()
+    {
+        if (currentThreadIndex == -1) return nullptr;
+        if (static_cast<std::size_t>(currentThreadIndex) >= activeThreads.size()) return nullptr;
+
+        return this->activeThreads[this->currentThreadIndex];
     }
 };

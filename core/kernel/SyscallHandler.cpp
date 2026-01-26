@@ -2,6 +2,7 @@
 #include "Common.hpp"
 #include "Logger.hpp"
 #include "Stats.hpp"
+#include "Utils.hpp"
 #include <iostream>
 #include <unistd.h>
 #include <vector>
@@ -25,6 +26,9 @@ bool SyscallHandler::dispatch(SyscallID id)
     case SyscallID::SYS_READ:
         this->handleRead();
         break;
+    case SyscallID::SYS_THREAD_CREATE:
+        this->handleCreateThread();
+        break;
     default:
         LOG(SYSCALL, ERROR, "Unimplemented syscall id: " + std::to_string((int)id));
         this->ctx->cpu.halt();
@@ -34,14 +38,44 @@ bool SyscallHandler::dispatch(SyscallID id)
     return processExited;
 }
 
+void SyscallHandler::handleCreateThread()
+{
+    Word funcPtr = this->ctx->cpu.readReg(10);
+    Word arg = this->ctx->cpu.readReg(11);
+
+    Thread* current = this->ctx->getCurrentThread();
+    if (current == nullptr) return;
+
+    Process* proc = current->getProcess();
+    Thread* newThread = proc->createThread(funcPtr, arg);
+    if (newThread == nullptr)
+    {
+        LOG(SYSCALL, ERROR, "Thread Creation Failed: Invalid Entry PC " + Utils::toHex(funcPtr));
+        // Return -1 to user
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    newThread->setState(ThreadState::READY);
+    this->ctx->activeThreads.push_back(newThread);
+
+    LOG(SYSCALL, INFO, "Created Thread " + std::to_string(newThread->getTid()) + " (PID " + std::to_string(proc->getPid()) + ")");
+
+    this->ctx->cpu.writeReg(10, newThread->getTid());
+    this->ctx->cpu.advancePC();
+}
+
 bool SyscallHandler::handleExit()
 {
     Word exitCode = this->ctx->cpu.readReg(10);
-    if (this->ctx->currentProcessIndex != -1)
+    Thread* current = this->ctx->getCurrentThread();
+
+    if (current != nullptr)
     {
-        Process* current = this->ctx->processList[this->ctx->currentProcessIndex];
-        current->setState(ProcessState::TERMINATED);
-        LOG(KERNEL, INFO, "Process " + std::to_string(current->getPid()) + " exited with code " + std::to_string(exitCode));
+        current->setState(ThreadState::TERMINATED);
+        Process* proc = current->getProcess();
+        LOG(KERNEL, INFO, "Thread " + std::to_string(current->getTid()) + " (PID " + std::to_string(proc->getPid()) + ")" + " exited code " + std::to_string(exitCode));
         return true; // Signal to schedule
     }
     this->ctx->cpu.halt();
@@ -50,7 +84,10 @@ bool SyscallHandler::handleExit()
 
 void SyscallHandler::handleWrite()
 {
-    Process* current = this->ctx->processList[this->ctx->currentProcessIndex];
+    Thread* currentThread = this->ctx->getCurrentThread();
+    if (currentThread == nullptr) return;
+
+    Process* current = currentThread->getProcess();
     LOG(SYSCALL, DEBUG, "Write called by PID " + std::to_string(current->getPid()));
 
     Word rawFD = this->ctx->cpu.readReg(10);
@@ -87,7 +124,11 @@ void SyscallHandler::handleWrite()
 
 void SyscallHandler::handleRead()
 {
-    Process* current = this->ctx->processList[this->ctx->currentProcessIndex];
+    Thread* currentThread = this->ctx->getCurrentThread();
+    if (currentThread == nullptr) return;
+
+    Process* current = currentThread->getProcess();
+
     LOG(SYSCALL, DEBUG, "Read called by PID " + std::to_string(current->getPid()));
 
     Word rawFD = this->ctx->cpu.readReg(10);

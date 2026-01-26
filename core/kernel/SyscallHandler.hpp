@@ -16,4 +16,5 @@ private:
     bool handleExit();
     void handleWrite();
     void handleRead();
+    void handleCreateThread();
 };

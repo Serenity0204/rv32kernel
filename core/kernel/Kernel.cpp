@@ -17,7 +17,8 @@ bool Kernel::createProcess(const std::string& filename)
 void Kernel::run()
 {
     // ADMISSION: Move NEW -> READY
-    bool hasReady = this->scheduler.admitProcesses();
+    bool hasReady = !this->ctx.activeThreads.empty();
+
     if (!hasReady)
     {
         LOG(KERNEL, WARNING, "No READY processes.");
