@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.hpp"
+#include "Mutex.hpp"
 #include "PTE.hpp"
 #include "RegFile.hpp"
 #include "Thread.hpp"
@@ -30,6 +31,7 @@ private:
         PageTable* pageTable;
         std::vector<Segment> segments;
         std::vector<Thread*> threads;
+        std::vector<Mutex*> mutexList;
         Addr nextStackBase;
 
         PCB(int id, std::string n) : pid(id), name(n)
@@ -46,6 +48,9 @@ private:
             }
             for (Thread* thread : this->threads) delete thread;
             this->threads.clear();
+
+            for (Mutex* mutex : this->mutexList) delete mutex;
+            this->mutexList.clear();
         }
     };
 
@@ -62,6 +67,11 @@ public:
     inline PageTable* getPageTable() { return this->pcb->pageTable; }
     inline std::vector<Segment>& getSegments() { return this->pcb->segments; }
     inline std::vector<Thread*>& getThreads() { return this->pcb->threads; }
+
+public:
+    // mutex related
+    int createMutex();
+    Mutex* getMutex(int id);
 
 private:
     PCB* pcb;

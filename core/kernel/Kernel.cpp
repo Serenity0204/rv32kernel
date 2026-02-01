@@ -63,6 +63,18 @@ void Kernel::run()
 
             // will handle pc increment individually, exit will yield
             SyscallStatus status = this->syscalls.dispatch(sys.getSyscallID());
+
+            // on error, kill the process that's doing the syscall
+            if (status.error)
+            {
+                bool killed = this->killProcess(this->ctx.getCurrentThread()->getProcess()->getPid());
+                // if not killed, kernel panic
+                if (!killed) this->ctx.cpu.halt();
+                // after killing, yield
+                this->scheduler.yield();
+                continue;
+            }
+
             if (status.needReschedule)
             {
                 this->scheduler.yield();

@@ -34,6 +34,15 @@ SyscallStatus SyscallHandler::dispatch(SyscallID id)
     case SyscallID::SYS_THREAD_JOIN:
         this->handleThreadJoin(status);
         break;
+    case SyscallID::SYS_MUTEX_CREATE:
+        this->handleMutexCreate(status);
+        break;
+    case SyscallID::SYS_MUTEX_LOCK:
+        this->handleMutexLock(status);
+        break;
+    case SyscallID::SYS_MUTEX_UNLOCK:
+        this->handleMutexUnlock(status);
+        break;
     default:
         LOG(SYSCALL, ERROR, "Unimplemented syscall id: " + std::to_string((int)id));
         this->ctx->cpu.halt();
@@ -294,4 +303,86 @@ void SyscallHandler::handleRead(SyscallStatus& status)
     this->ctx->cpu.writeReg(10, static_cast<Word>(-1));
     this->ctx->cpu.advancePC();
     return;
+}
+
+void SyscallHandler::handleMutexCreate(SyscallStatus& status)
+{
+    // reset status
+    status.needReschedule = false;
+    status.error = false;
+
+    Thread* current = this->ctx->getCurrentThread();
+    int mutexID = current->getProcess()->createMutex();
+    this->ctx->cpu.writeReg(10, mutexID);
+    this->ctx->cpu.advancePC();
+}
+
+void SyscallHandler::handleMutexLock(SyscallStatus& status)
+{
+    // reset status
+    status.needReschedule = false;
+    status.error = false;
+
+    int mutexID = this->ctx->cpu.readReg(10);
+    Thread* current = this->ctx->getCurrentThread();
+    Process* process = current->getProcess();
+    Mutex* lock = process->getMutex(mutexID);
+
+    // not valid lock, error
+    if (lock == nullptr)
+    {
+        status.error = true;
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    bool acquired = lock->acquire(current);
+
+    // if lock is held, need to reschedule, and dont advance PC so later when all woke up, it can retry
+    if (!acquired)
+    {
+        status.needReschedule = true;
+        return;
+    }
+
+    // lock is acquired, just advance PC and return 0
+    this->ctx->cpu.writeReg(10, 0);
+    this->ctx->cpu.advancePC();
+}
+void SyscallHandler::handleMutexUnlock(SyscallStatus& status)
+{
+    // reset status
+    status.needReschedule = false;
+    status.error = false;
+
+    int mutexID = this->ctx->cpu.readReg(10);
+    Thread* current = this->ctx->getCurrentThread();
+    Process* process = current->getProcess();
+    Mutex* lock = process->getMutex(mutexID);
+
+    // not valid lock
+    if (lock == nullptr)
+    {
+        status.error = true;
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    // try to release
+    bool success = lock->release(current);
+
+    // not the owner releasing the lock
+    if (!success)
+    {
+        status.error = true;
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    // releasing success
+    this->ctx->cpu.writeReg(10, 0);
+    this->ctx->cpu.advancePC();
 }

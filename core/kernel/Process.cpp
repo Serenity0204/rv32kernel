@@ -45,3 +45,17 @@ Thread* Process::createThread(Addr entryPC, Word arg)
     this->pcb->threads.push_back(thread);
     return thread;
 }
+
+int Process::createMutex()
+{
+    Mutex* mutex = new Mutex();
+    int id = this->pcb->mutexList.size();
+    this->pcb->mutexList.push_back(mutex);
+    return id;
+}
+
+Mutex* Process::getMutex(int id)
+{
+    if (id < 0 || static_cast<std::size_t>(id) >= this->pcb->mutexList.size()) return nullptr;
+    return this->pcb->mutexList[id];
+}

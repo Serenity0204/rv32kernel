@@ -20,4 +20,9 @@ private:
     void handleThreadCreate(SyscallStatus& status);
     void handleThreadExit(SyscallStatus& status);
     void handleThreadJoin(SyscallStatus& status);
+
+    // mutex related
+    void handleMutexCreate(SyscallStatus& status);
+    void handleMutexLock(SyscallStatus& status);
+    void handleMutexUnlock(SyscallStatus& status);
 };

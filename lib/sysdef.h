@@ -1,6 +1,8 @@
 #ifndef SYSDEF_H
 #define SYSDEF_H
 
+#define NULL ((void*)0)
+
 #define _syscall0(id)                                          \
     ({                                                         \
         register long a7 asm("a7") = (long)(id);               \

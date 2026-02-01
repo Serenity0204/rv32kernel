@@ -16,6 +16,9 @@ enum class SyscallID : int
     SYS_THREAD_CREATE = 3,
     SYS_THREAD_EXIT = 4,
     SYS_THREAD_JOIN = 5,
+    SYS_MUTEX_CREATE = 6,
+    SYS_MUTEX_LOCK = 7,
+    SYS_MUTEX_UNLOCK = 8,
     SYS_UNKNOWN = -1,
 };
 
@@ -26,4 +29,7 @@ inline const std::unordered_map<SyscallID, std::string> sysCallNameMap = {
     {SyscallID::SYS_THREAD_CREATE, "create thread syscall"},
     {SyscallID::SYS_THREAD_EXIT, "exit thread syscall"},
     {SyscallID::SYS_THREAD_JOIN, "join thread syscall"},
+    {SyscallID::SYS_MUTEX_CREATE, "mutex create syscall"},
+    {SyscallID::SYS_MUTEX_LOCK, "mutex lock syscall"},
+    {SyscallID::SYS_MUTEX_UNLOCK, "mutex unlock syscall"},
 };
