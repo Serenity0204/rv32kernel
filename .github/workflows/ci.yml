@@ -1,0 +1,31 @@
+name: Kernel CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-only:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake python3
+        sudo apt-get install -y gcc-riscv64-unknown-elf
+
+    - name: Make Scripts Executable
+      run: |
+        chmod +x build.sh clean.sh
+        chmod +x scripts/*.sh 
+
+    - name: Build Kernel
+      run: |
+        ./clean.sh
+        ./build.sh
