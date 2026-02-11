@@ -2,7 +2,7 @@
 
 void PhysicalMemoryManager::init()
 {
-    for (Addr frame = MEMORY_BASE; frame < MEMORY_BASE + MEMORY_SIZE; frame += PAGE_SIZE) this->freeFrames.push_back(frame);
+    for (Addr frame = MEMORY_BASE; frame < MEMORY_BASE + MEMORY_SIZE; frame += KERNEL_PAGE_SIZE) this->freeFrames.push_back(frame);
 }
 
 Addr PhysicalMemoryManager::allocateFrame()

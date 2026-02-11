@@ -11,7 +11,10 @@ class Kernel
 public:
     Kernel();
     ~Kernel() = default;
-    void run();
+    void init();
+    void step();
+    bool isRunning();
+
     bool createProcess(const std::string& filename);
     bool killProcess(int pid);
 

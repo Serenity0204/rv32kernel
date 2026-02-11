@@ -1,8 +1,7 @@
 #pragma once
-#include <fstream>
 #include <iostream>
-#include <mutex>
 #include <string>
+#include <vector>
 
 enum class LogLevel
 {
@@ -34,10 +33,6 @@ public:
     // Main Log Function
     void log(LogSource source, LogLevel level, const std::string& message)
     {
-        std::lock_guard<std::mutex> lock(this->logMutex);
-
-        if (!this->logFile.is_open()) return;
-
         std::string sourceStr = "";
 
         // Map Source to String
@@ -65,36 +60,36 @@ public:
 
         if (level == LogLevel::ERROR)
         {
-            this->logFile << sourceStr << " ERROR: " << message << std::endl;
+            std::string msg = sourceStr + " ERROR: " + message;
+            this->messages.push_back(msg);
             return;
         }
         if (level == LogLevel::WARNING)
         {
-            this->logFile << sourceStr << " WARN: " << message << std::endl;
+            std::string msg = sourceStr + " WARN: " + message;
+            this->messages.push_back(msg);
             return;
         }
+        std::string msg = sourceStr + " " + message;
+        this->messages.push_back(msg);
+    }
+    void printAll()
+    {
+        for (std::size_t i = 0; i < this->messages.size(); ++i)
+            std::cout << this->messages[i] << std::endl;
+    }
 
-        this->logFile << sourceStr << " " << message << std::endl;
+    void clear()
+    {
+        this->messages.clear();
     }
 
 private:
-    Logger()
-    {
-        // Open log.txt in truncate mode (clears the file every time you run)
-        logFile.open("log.txt", std::ios::out | std::ios::trunc);
-        if (!logFile)
-        {
-            std::cout << "Cannot open logfile, kernel crashed.\n";
-            exit(1);
-        }
-    }
-    ~Logger()
-    {
-        if (logFile.is_open())
-            this->logFile.close();
-    }
-    std::mutex logMutex;
-    std::ofstream logFile;
+    Logger() = default;
+    ~Logger() = default;
+    std::vector<std::string> messages;
 };
 
 #define LOG(source, level, msg) Logger::getInstance().log(LogSource::source, LogLevel::level, msg)
+#define SHOW_LOGS() Logger::getInstance().printAll()
+#define CLEAR_LOGS() Logger::getInstance().clear()

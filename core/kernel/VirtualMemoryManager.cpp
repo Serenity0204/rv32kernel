@@ -85,17 +85,17 @@ bool VirtualMemoryManager::handleLazyLoading(Process* proc, Addr faultAddr, Addr
             Addr paddr = this->ctx->pmm.allocateFrame();
             STATS.incAllocatedFrames();
             // Calculate offsets
-            Addr pageStartVAddr = vpn * PAGE_SIZE;
+            Addr pageStartVAddr = vpn * KERNEL_PAGE_SIZE;
             size_t offsetInSegment = pageStartVAddr - seg.vaddr;
             size_t filePos = seg.fileOffset + offsetInSegment;
 
-            std::vector<char> buffer(PAGE_SIZE, 0);
+            std::vector<char> buffer(KERNEL_PAGE_SIZE, 0);
             // Logic: Read from file if within fileSize; otherwise 0 (BSS)
             if (offsetInSegment < seg.fileSize)
             {
                 this->ctx->timer.tick(DISK_IO_TIME);
 
-                size_t bytesToRead = std::min((size_t)PAGE_SIZE, seg.fileSize - offsetInSegment);
+                size_t bytesToRead = std::min((size_t)KERNEL_PAGE_SIZE, seg.fileSize - offsetInSegment);
                 std::ifstream file(proc->getName(), std::ios::binary);
 
                 file.seekg(filePos);
@@ -104,7 +104,7 @@ bool VirtualMemoryManager::handleLazyLoading(Process* proc, Addr faultAddr, Addr
             }
 
             // Write directly to Physical RAM using CPU's debug interface
-            for (size_t i = 0; i < PAGE_SIZE; i++)
+            for (size_t i = 0; i < KERNEL_PAGE_SIZE; i++)
                 this->ctx->cpu.storePhysicalMemory(paddr + i, 1, static_cast<Word>(buffer[i]));
 
             // Update PTE Struct

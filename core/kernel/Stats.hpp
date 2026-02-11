@@ -43,6 +43,16 @@ public:
         std::cout << "============================================\n";
     }
 
+    void reset()
+    {
+        totalInstructions = 0;
+        totalContextSwitches = 0;
+        totalPageFaults = 0;
+        totalSyscalls = 0;
+        totalDiskReads = 0;
+        totalAllocatedFrames = 0;
+    }
+
 private:
     Stats() = default;
 

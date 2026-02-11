@@ -30,9 +30,8 @@ bool Kernel::killProcess(int pid)
     return true;
 }
 
-void Kernel::run()
+void Kernel::init()
 {
-    // ADMISSION: Move NEW -> READY
     bool hasReady = !this->ctx.activeThreads.empty();
 
     if (!hasReady)
@@ -42,77 +41,80 @@ void Kernel::run()
     }
 
     this->ctx.cpu.enableVM(true);
-
-    // start the first process
     this->scheduler.yield();
 
     LOG(KERNEL, INFO, "Simulation started...");
+}
 
-    while (!this->ctx.cpu.isHalted())
+void Kernel::step()
+{
+    if (this->ctx.cpu.isHalted()) return;
+
+    try
     {
-        try
+        STATS.incInstructions();
+        this->ctx.cpu.step();
+        this->ctx.timer.tick(USER_MODE_TICK_TIME);
+        this->ctx.cpu.advancePC();
+    }
+    catch (SyscallException& sys)
+    {
+        this->ctx.timer.tick(ENTER_KERNEL_MODE_TIME);
+
+        // will handle pc increment individually, exit will yield
+        SyscallStatus status = this->syscalls.dispatch(sys.getSyscallID());
+
+        // on error, kill the process that's doing the syscall
+        if (status.error)
         {
-            STATS.incInstructions();
-            this->ctx.cpu.step();
-            this->ctx.timer.tick(USER_MODE_TICK_TIME);
-            this->ctx.cpu.advancePC();
-        }
-        catch (SyscallException& sys)
-        {
-            this->ctx.timer.tick(ENTER_KERNEL_MODE_TIME);
-
-            // will handle pc increment individually, exit will yield
-            SyscallStatus status = this->syscalls.dispatch(sys.getSyscallID());
-
-            // on error, kill the process that's doing the syscall
-            if (status.error)
-            {
-                bool killed = this->killProcess(this->ctx.getCurrentThread()->getProcess()->getPid());
-                // if not killed, kernel panic
-                if (!killed) this->ctx.cpu.halt();
-                // after killing, yield
-                this->scheduler.yield();
-                continue;
-            }
-
-            if (status.needReschedule)
-            {
-                this->scheduler.yield();
-                continue;
-            }
-        }
-        catch (PageFaultException& pf)
-        {
-            this->ctx.timer.tick(ENTER_KERNEL_MODE_TIME);
-            bool pageFaultHandled = this->vmm.handlePageFault(pf.getFaultAddr());
-            // If VMM returns false, it was a crash -> reschedule
-            bool crashed = !pageFaultHandled;
-            if (crashed)
-            {
-                // terminate all threads related to this segfault process(current process)
-                bool killed = this->killProcess(this->ctx.getCurrentThread()->getProcess()->getPid());
-
-                // if not killed, kernel panic
-                if (!killed) this->ctx.cpu.halt();
-
-                // after killing, yield
-                this->scheduler.yield();
-                continue;
-            }
-        }
-        catch (std::exception& e)
-        {
-            LOG(KERNEL, ERROR, "Unexpected exception: " + std::string(e.what()));
-            this->ctx.cpu.halt();
-            break;
-        }
-
-        if (this->ctx.timer.isInterruptPending())
-        {
-            LOG(KERNEL, INFO, "Timer Interrupt.");
+            bool killed = this->killProcess(this->ctx.getCurrentThread()->getProcess()->getPid());
+            // if not killed, kernel panic
+            if (!killed) this->ctx.cpu.halt();
+            // after killing, yield
             this->scheduler.yield();
+            return;
+        }
+
+        if (status.needReschedule)
+        {
+            this->scheduler.yield();
+            return;
         }
     }
+    catch (PageFaultException& pf)
+    {
+        this->ctx.timer.tick(ENTER_KERNEL_MODE_TIME);
+        bool pageFaultHandled = this->vmm.handlePageFault(pf.getFaultAddr());
+        // If VMM returns false, it was a crash -> reschedule
+        bool crashed = !pageFaultHandled;
+        if (crashed)
+        {
+            // terminate all threads related to this segfault process(current process)
+            bool killed = this->killProcess(this->ctx.getCurrentThread()->getProcess()->getPid());
 
-    STATS.printSummary();
+            // if not killed, kernel panic
+            if (!killed) this->ctx.cpu.halt();
+
+            // after killing, yield
+            this->scheduler.yield();
+            return;
+        }
+    }
+    catch (std::exception& e)
+    {
+        LOG(KERNEL, ERROR, "Unexpected exception: " + std::string(e.what()));
+        this->ctx.cpu.halt();
+        return;
+    }
+
+    if (this->ctx.timer.isInterruptPending())
+    {
+        LOG(KERNEL, INFO, "Timer Interrupt.");
+        this->scheduler.yield();
+    }
+}
+
+bool Kernel::isRunning()
+{
+    return !this->ctx.cpu.isHalted();
 }
