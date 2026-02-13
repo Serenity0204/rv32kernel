@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>RISC-V Kernel WASM</title>
+    <style>
+        /* ... (Same CSS as before) ... */
+        body {
+            font-family: sans-serif;
+            background-color: #222;
+            color: #eee;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #terminal {
+            width: 80%;
+            height: 500px;
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border: 2px solid #555;
+            border-radius: 5px;
+            overflow-y: scroll;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+
+        .controls {
+            background: #333;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        /* New Input Styles */
+        .input-area {
+            width: 80%;
+            display: flex;
+            margin-top: 10px;
+        }
+
+        #consoleInput {
+            flex-grow: 1;
+            background: #111;
+            border: 1px solid #555;
+            color: #0f0;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        #sendBtn {
+            margin-left: 10px;
+            background-color: #2196F3;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="controls">
+        <h2>RISC-V Kernel Simulation</h2>
+        <input type="file" id="elfInput" accept=".elf,.bin" />
+        <button id="runBtn" onclick="runSimulation()">Run Kernel</button>
+    </div>
+
+    <div id="terminal">Waiting for process...</div>
+
+    <div class="input-area">
+        <input type="text" id="consoleInput" placeholder="Type here and press Enter..." disabled>
+        <button id="sendBtn" onclick="sendInput()" disabled>Send</button>
+    </div>
+
+    <script>
+        // --- INPUT HANDLING BUFFERS ---
+        var inputBuffer = [];   // Stores characters typed by user
+        var wakeUpStdin = null; // Function to resume C++ when it's sleeping
+
+        // Custom STDIN function for Emscripten
+        function myStdin() {
+            // 1. If we have data, give it to C++ immediately
+            if (inputBuffer.length > 0) {
+                return inputBuffer.shift();
+            }
+
+            // 2. If buffer is empty, PAUSE C++ execution (Asyncify)
+            console.log("C++ is asking for input... Pausing.");
+            return Asyncify.handleSleep(function (wakeUp) {
+                // Save the 'wakeUp' function so we can call it later when user types
+                wakeUpStdin = wakeUp;
+            });
+        }
+
+        var Module = {
+            // Wire up our custom stdin
+            preRun: [function () {
+                // FS.init(stdin, stdout, stderr)
+                // We pass null for stdout/err to keep default behavior (Module.print)
+                FS.init(myStdin, null, null);
+            }],
+            print: function (text) {
+                appendToTerminal(text);
+                console.log(text);
+            },
+            printErr: function (text) {
+                appendToTerminal("[STDERR] " + text);
+                console.error(text);
+            }
+        };
+
+        function appendToTerminal(text) {
+            const term = document.getElementById('terminal');
+            if (term.textContent.startsWith("Waiting")) term.textContent = "";
+            term.textContent += text + "\n";
+            term.scrollTop = term.scrollHeight;
+        }
+
+        // --- NEW: Handle User Input ---
+        function sendInput() {
+            const inputField = document.getElementById('consoleInput');
+            const text = inputField.value;
+            inputField.value = ""; // Clear box
+
+            // Echo input to terminal so user sees what they typed
+            appendToTerminal(text);
+
+            // Convert string to bytes and push to buffer
+            for (let i = 0; i < text.length; i++) {
+                inputBuffer.push(text.charCodeAt(i));
+            }
+            inputBuffer.push(10); // Add Newline (\n)
+
+            // If C++ is currently paused waiting for input, WAKE IT UP!
+            if (wakeUpStdin) {
+                const resume = wakeUpStdin;
+                wakeUpStdin = null;
+                resume(inputBuffer.shift()); // Return the first char immediately to end the read() call
+            }
+        }
+
+        // Allow pressing "Enter" key
+        document.getElementById('consoleInput').addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                sendInput();
+            }
+        });
+    </script>
+
+    <script src="kernel.js"></script>
+
+    <script>
+        async function runSimulation() {
+            const fileInput = document.getElementById('elfInput');
+            const runBtn = document.getElementById('runBtn');
+            const inputField = document.getElementById('consoleInput');
+            const sendBtn = document.getElementById('sendBtn');
+
+            if (fileInput.files.length === 0) {
+                alert("Please select an ELF file first!");
+                return;
+            }
+
+            runBtn.disabled = true;
+            inputField.disabled = false; // Enable typing
+            sendBtn.disabled = false;
+
+            document.getElementById('terminal').textContent = "Loading ELF...\n";
+
+            try {
+                // File Loading
+                const file = fileInput.files[0];
+                const arrayBuffer = await file.arrayBuffer();
+                const uint8View = new Uint8Array(arrayBuffer);
+                Module.FS.writeFile('/program.elf', uint8View);
+
+                appendToTerminal("File loaded.\nInitializing...\n");
+
+                // Clear Clean State
+                if (Module.clearLogs) Module.clearLogs();
+                if (Module.resetStats) Module.resetStats();
+
+                // Start Kernel
+                const kernel = new Module.Kernel();
+                if (!kernel.createProcess('/program.elf')) {
+                    appendToTerminal("Error loading ELF.");
+                    return;
+                }
+
+                kernel.init();
+                appendToTerminal("Running...\n");
+
+                const batchSize = 5000;
+
+                // Note: With ASYNCIFY, the loop function must be async 
+                // but since we rely on C++ sleeping internally, the basic setTimeOut loop works fine.
+                // However, kernel.step() is now an ASYNC function potentially.
+                // But Emscripten handles the Promise unwrapping for void functions usually.
+                // Let's stick to the standard loop.
+
+                function loop() {
+                    if (kernel.isRunning()) {
+                        try {
+                            for (let i = 0; i < batchSize; i++) {
+                                kernel.step();
+                                // If step() hit a 'cin', it paused execution. 
+                                // We won't reach here until it resumes? 
+                                // Actually with Asyncify, step() might return immediately if suspended?
+                                // No, C++ pause unwinds the stack.
+                                if (!kernel.isRunning()) break;
+                            }
+                            setTimeout(loop, 0);
+                        } catch (e) {
+                            // If e is "Infinity", it's the Asyncify unwind signal. Ignore it.
+                            if (e === Infinity) {
+                                // Just reschedule loop, it means we are paused.
+                                setTimeout(loop, 0);
+                                return;
+                            }
+                            appendToTerminal("\nCRASH: " + e);
+                            kernel.delete();
+                        }
+                    } else {
+                        finish();
+                    }
+                }
+
+                function finish() {
+                    appendToTerminal("\n--- Finished ---\n");
+                    if (Module.flushLogs) Module.flushLogs();
+                    if (Module.printStats) Module.printStats();
+                    kernel.delete();
+                    runBtn.disabled = false;
+                    inputField.disabled = true;
+                }
+
+                loop();
+
+            } catch (err) {
+                appendToTerminal("\nError: " + err);
+                runBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>
