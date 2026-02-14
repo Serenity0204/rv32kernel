@@ -14,6 +14,10 @@
 #define SYS_MUTEX_LOCK 7
 #define SYS_MUTEX_UNLOCK 8
 
+#define SYS_OPEN 9
+#define SYS_CLOSE 10
+#define SYS_CREATE 11
+
 // mutex id
 typedef int mutex_t;
 
@@ -29,5 +33,10 @@ int thread_join(int tid);
 mutex_t mutex_create();
 void mutex_lock(mutex_t* lock);
 void mutex_unlock(mutex_t* lock);
+
+// file related
+int open(const char* filename);
+int close(int fd);
+int create(const char* filename, int sizeBytes);
 
 #endif

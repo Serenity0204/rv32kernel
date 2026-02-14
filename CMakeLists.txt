@@ -21,6 +21,7 @@ include_directories(
     core/machine
     core/common
     core/kernel
+    core/filesystem
 )
 
 # --- 3. Source Files ---
@@ -29,6 +30,7 @@ file(GLOB_RECURSE SOURCES
     "core/main.cpp"
     "core/machine/*.cpp" 
     "core/kernel/*.cpp"
+    "core/filesystem/*.cpp"
 )
 
 # --- 4. Main Target (The Emulator) ---

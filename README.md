@@ -33,10 +33,14 @@ The system operates on a Sequential execution model with Interrupt Polling. This
   - `SYS_EXIT`: Manages process termination and exit codes.
   - `SYS_THREAD_CREATE`: Creates a thread object.
   - `SYS_THREAD_EXIT`: Exit the current thread.
-  - `SYS_THREAD_JOIN`: Join one thread with another thread
-  - `SYS_MUTEX_CREATE`: Create a mutex lock for this process
-  - `SYS_MUTEX_LOCK`: Try to acquire the lock
-  - `SYS_MUTEX_UNLOCK`: Try to release the lock
+  - `SYS_THREAD_JOIN`: Join one thread with another thread.
+  - `SYS_MUTEX_CREATE`: Create a mutex lock for this process.
+  - `SYS_MUTEX_LOCK`: Try to acquire the lock.
+  - `SYS_MUTEX_UNLOCK`: Try to release the lock.
+  - `SYS_OPEN`: open a file, return the file descriptor id.
+  - `SYS_CLOSE`: close the file.
+  - `SYS_CREATE`: create a file.
+  
 ## [Detailed Wiki](https://deepwiki.com/Serenity0204/rv32sysemu)
 
 ## Toolchain Requirements
@@ -59,7 +63,7 @@ bash clean.sh
 ```
 **Run**
 ```bash
-./rv32kernel programs/<your_file.bin>
+./rv32kernel programs/<your_file.elf>
 ```
 
 ## Example Output(Log)

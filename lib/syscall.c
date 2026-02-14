@@ -53,3 +53,19 @@ void mutex_unlock(mutex_t* lock)
     int status = syscall(SYS_MUTEX_UNLOCK, *lock);
     if (status == -1) exit(-1);
 }
+
+int open(const char* filename)
+{
+    return syscall(SYS_OPEN, (int)filename);
+}
+
+int close(int fd)
+{
+    return syscall(SYS_CLOSE, fd);
+}
+
+int create(const char* filename, int sizeBytes)
+{
+    if (sizeBytes <= 0) return -1;
+    return syscall(SYS_CREATE, (int)filename, sizeBytes);
+}
