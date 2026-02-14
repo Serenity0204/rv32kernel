@@ -15,6 +15,9 @@ private:
     void handleExit(SyscallStatus& status);
     void handleWrite(SyscallStatus& status);
     void handleRead(SyscallStatus& status);
+    void handleOpen(SyscallStatus& status);
+    void handleClose(SyscallStatus& status);
+    void handleCreate(SyscallStatus& status);
 
     // threads related
     void handleThreadCreate(SyscallStatus& status);

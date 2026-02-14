@@ -41,3 +41,10 @@ const std::size_t DISK_IO_TIME = 5000;
 
 // for disk
 const std::size_t BLOCK_SIZE = 4096;
+const std::size_t NUM_BLOCKS = 1024;
+
+// fd table size
+const std::size_t FD_TABLE_SIZE = 1024;
+
+// max file name length
+const std::size_t MAX_FILE_NAME_LENGTH = 128;

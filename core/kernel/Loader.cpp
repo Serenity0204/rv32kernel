@@ -1,5 +1,6 @@
 #include "Loader.hpp"
 #include "Logger.hpp"
+#include "Segment.hpp"
 #include "Utils.hpp"
 #include <elf.h>
 #include <fstream>

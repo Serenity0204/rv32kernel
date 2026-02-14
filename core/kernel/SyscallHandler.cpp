@@ -43,6 +43,15 @@ SyscallStatus SyscallHandler::dispatch(SyscallID id)
     case SyscallID::SYS_MUTEX_UNLOCK:
         this->handleMutexUnlock(status);
         break;
+    case SyscallID::SYS_OPEN:
+        this->handleOpen(status);
+        break;
+    case SyscallID::SYS_CLOSE:
+        this->handleClose(status);
+        break;
+    case SyscallID::SYS_CREATE:
+        this->handleCreate(status);
+        break;
     default:
         LOG(SYSCALL, ERROR, "Unimplemented syscall id: " + std::to_string((int)id));
         this->ctx->cpu.halt();
@@ -234,26 +243,26 @@ void SyscallHandler::handleWrite(SyscallStatus& status)
     size_t copyCost = count * 2;
     this->ctx->timer.tick(SYSCALL_BASE_TIME + copyCost);
 
-    FileDescriptor fd = static_cast<FileDescriptor>(rawFD);
-    if (fd == FileDescriptor::STDOUT || fd == FileDescriptor::STDERR)
+    // get file handle
+    int fd = static_cast<int>(rawFD);
+    FileHandleInterface* handle = current->getFileHandle(fd);
+    // if not valid
+    if (handle == nullptr)
     {
-        std::vector<char> hostBuffer(count);
-        for (Word i = 0; i < count; ++i)
-        {
-            char c = this->ctx->cpu.loadVirtualMemory(addr + static_cast<Addr>(i), 1);
-            hostBuffer[i] = c;
-        }
-
-        int hostFD = (fd == FileDescriptor::STDOUT) ? STDOUT_FILENO : STDERR_FILENO;
-        ssize_t written = ::write(hostFD, hostBuffer.data(), count);
-        std::cout.flush();
-
-        this->ctx->cpu.writeReg(10, written);
+        this->ctx->cpu.writeReg(10, -1);
         this->ctx->cpu.advancePC();
         return;
     }
-    // other fd, not supported yet
-    this->ctx->cpu.writeReg(10, static_cast<Word>(-1));
+
+    std::vector<Byte> buffer(count);
+    for (Word i = 0; i < count; ++i)
+    {
+        char c = this->ctx->cpu.loadVirtualMemory(addr + static_cast<Addr>(i), 1);
+        buffer[i] = c;
+    }
+
+    int written = handle->write(buffer, count);
+    this->ctx->cpu.writeReg(10, written);
     this->ctx->cpu.advancePC();
     return;
 }
@@ -279,30 +288,121 @@ void SyscallHandler::handleRead(SyscallStatus& status)
     size_t copyCost = count * 2;
     this->ctx->timer.tick(SYSCALL_BASE_TIME + copyCost);
 
-    FileDescriptor fd = static_cast<FileDescriptor>(rawFD);
-    if (fd == FileDescriptor::STDIN)
+    // get file handle
+    int fd = static_cast<int>(rawFD);
+    FileHandleInterface* handle = current->getFileHandle(fd);
+    // if not valid
+    if (handle == nullptr)
     {
-        std::vector<char> hostBuffer(count);
-        ssize_t bytesRead = ::read(STDIN_FILENO, hostBuffer.data(), count);
-
-        if (bytesRead > 0)
-        {
-            for (ssize_t i = 0; i < bytesRead; ++i)
-            {
-                char rawChar = hostBuffer[i];
-                uint8_t byte = static_cast<uint8_t>(rawChar);
-                this->ctx->cpu.storeVirtualMemory(addr + static_cast<Addr>(i), 1, static_cast<Word>(byte));
-            }
-        }
-        // other fd, not supported yet
-        this->ctx->cpu.writeReg(10, static_cast<Word>(bytesRead));
+        this->ctx->cpu.writeReg(10, -1);
         this->ctx->cpu.advancePC();
         return;
     }
 
-    this->ctx->cpu.writeReg(10, static_cast<Word>(-1));
+    std::vector<Byte> buffer(count);
+    int bytesRead = handle->read(buffer, count);
+    if (bytesRead > 0)
+    {
+        // Copy back to User VM
+        for (int i = 0; i < bytesRead; ++i)
+        {
+            char rawChar = buffer[i];
+            Byte byte = static_cast<uint8_t>(rawChar);
+            this->ctx->cpu.storeVirtualMemory(addr + static_cast<Addr>(i), 1, static_cast<Word>(byte));
+        }
+    }
+    this->ctx->cpu.writeReg(10, bytesRead);
     this->ctx->cpu.advancePC();
-    return;
+}
+
+void SyscallHandler::handleOpen(SyscallStatus& status)
+{
+    status.needReschedule = false;
+    status.error = false;
+
+    Word pathAddr = this->ctx->cpu.readReg(10);
+
+    std::string filename;
+    // read virtual memory string
+    std::size_t offset = 0;
+    while (true)
+    {
+        char c = static_cast<char>(this->ctx->cpu.loadVirtualMemory(pathAddr + offset, 1));
+        if (c == 0) break;
+        filename += c;
+        ++offset;
+        if (offset > MAX_FILE_NAME_LENGTH) break;
+    }
+
+    FileHandleInterface* handle = this->ctx->vfs->open(filename);
+    if (handle == nullptr)
+    {
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    // file exists
+    Process* current = this->ctx->getCurrentThread()->getProcess();
+    int fd = current->addFileHandle(handle);
+    LOG(SYSCALL, INFO, "Opened file: " + filename + " (FD " + std::to_string(fd) + ")");
+
+    if (fd == -1)
+    {
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    this->ctx->cpu.writeReg(10, fd);
+    this->ctx->cpu.advancePC();
+}
+
+void SyscallHandler::handleClose(SyscallStatus& status)
+{
+    status.needReschedule = false;
+    status.error = false;
+    Word fd = this->ctx->cpu.readReg(10);
+
+    Process* current = this->ctx->getCurrentThread()->getProcess();
+    bool ok = current->closeFileHandle(fd);
+    int code = ok ? 0 : 1;
+    this->ctx->cpu.writeReg(10, code);
+    this->ctx->cpu.advancePC();
+}
+
+void SyscallHandler::handleCreate(SyscallStatus& status)
+{
+    status.needReschedule = false;
+    status.error = false;
+
+    Word pathAddr = this->ctx->cpu.readReg(10);
+    Word size = this->ctx->cpu.readReg(11);
+
+    std::string filename;
+    // read virtual memory string
+    std::size_t offset = 0;
+    while (true)
+    {
+        char c = static_cast<char>(this->ctx->cpu.loadVirtualMemory(pathAddr + offset, 1));
+        if (c == 0) break;
+        filename += c;
+        ++offset;
+        if (offset > MAX_FILE_NAME_LENGTH) break;
+    }
+
+    bool success = this->ctx->vfs->createFile(filename, size);
+    if (!success)
+    {
+        LOG(SYSCALL, ERROR, "Failed to create file: " + filename);
+        this->ctx->cpu.writeReg(10, -1);
+        this->ctx->cpu.advancePC();
+        return;
+    }
+
+    LOG(SYSCALL, INFO, "Created file: " + filename + " (Size: " + std::to_string(size) + ")");
+    this->ctx->cpu.writeReg(10, 0);
+    this->ctx->cpu.advancePC();
 }
 
 void SyscallHandler::handleMutexCreate(SyscallStatus& status)

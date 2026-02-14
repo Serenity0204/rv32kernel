@@ -19,6 +19,9 @@ enum class SyscallID : int
     SYS_MUTEX_CREATE = 6,
     SYS_MUTEX_LOCK = 7,
     SYS_MUTEX_UNLOCK = 8,
+    SYS_OPEN = 9,
+    SYS_CLOSE = 10,
+    SYS_CREATE = 11,
     SYS_UNKNOWN = -1,
 };
 
@@ -32,4 +35,7 @@ inline const std::unordered_map<SyscallID, std::string> sysCallNameMap = {
     {SyscallID::SYS_MUTEX_CREATE, "mutex create syscall"},
     {SyscallID::SYS_MUTEX_LOCK, "mutex lock syscall"},
     {SyscallID::SYS_MUTEX_UNLOCK, "mutex unlock syscall"},
+    {SyscallID::SYS_OPEN, "open yscall"},
+    {SyscallID::SYS_CLOSE, "close syscall"},
+    {SyscallID::SYS_CREATE, "create syscall"},
 };

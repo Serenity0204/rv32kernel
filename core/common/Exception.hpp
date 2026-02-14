@@ -4,13 +4,6 @@
 #include <exception>
 #include <string>
 
-enum class FileDescriptor : int
-{
-    STDIN = 0,
-    STDOUT = 1,
-    STDERR = 2
-};
-
 class SyscallException : public std::exception
 {
 public:

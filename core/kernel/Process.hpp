@@ -1,21 +1,16 @@
 #pragma once
 #include "Common.hpp"
+#include "ConsoleHandle.hpp"
+#include "FileDescriptor.hpp"
+#include "FileHandleInterface.hpp"
 #include "Mutex.hpp"
 #include "PTE.hpp"
 #include "RegFile.hpp"
+#include "Segment.hpp"
 #include "Thread.hpp"
+#include <iostream>
 #include <string>
 #include <vector>
-
-// for ELF
-struct Segment
-{
-    Addr vaddr;
-    size_t memSize;
-    size_t fileSize;
-    size_t fileOffset;
-    uint32_t flags;
-};
 
 class Process
 {
@@ -32,12 +27,20 @@ private:
         std::vector<Segment> segments;
         std::vector<Thread*> threads;
         std::vector<Mutex*> mutexList;
+        std::vector<FileHandleInterface*> fdTable;
+
         Addr nextStackBase;
 
         PCB(int id, std::string n) : pid(id), name(n)
         {
             this->pageTable = new PageTable();
             this->nextStackBase = STACK_TOP;
+
+            this->fdTable.resize(FD_TABLE_SIZE);
+            this->fdTable[0] = new ConsoleHandle(FileDescriptor::STDIN);
+            this->fdTable[1] = new ConsoleHandle(FileDescriptor::STDOUT);
+            this->fdTable[2] = new ConsoleHandle(FileDescriptor::STDERR);
+            for (std::size_t i = 3; i < FD_TABLE_SIZE; ++i) this->fdTable[i] = nullptr;
         }
         ~PCB()
         {
@@ -72,6 +75,12 @@ public:
     // mutex related
     int createMutex();
     Mutex* getMutex(int id);
+
+public:
+    // file related
+    int addFileHandle(FileHandleInterface* handle);
+    FileHandleInterface* getFileHandle(int fd);
+    bool closeFileHandle(int fd);
 
 private:
     PCB* pcb;

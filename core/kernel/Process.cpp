@@ -59,3 +59,41 @@ Mutex* Process::getMutex(int id)
     if (id < 0 || static_cast<std::size_t>(id) >= this->pcb->mutexList.size()) return nullptr;
     return this->pcb->mutexList[id];
 }
+
+int Process::addFileHandle(FileHandleInterface* handle)
+{
+    if (handle == nullptr) return -1;
+
+    // find the first ever fd slot
+    int fd = -1;
+    for (std::size_t i = 0; i < this->pcb->fdTable.size(); ++i)
+    {
+        if (this->pcb->fdTable[i] == nullptr)
+        {
+            fd = static_cast<int>(i);
+            break;
+        }
+    }
+
+    // no space
+    if (fd == -1) return -1;
+    this->pcb->fdTable[fd] = handle;
+    return fd;
+}
+
+FileHandleInterface* Process::getFileHandle(int fd)
+{
+    if (fd < 0 || fd >= static_cast<int>(this->pcb->fdTable.size())) return nullptr;
+    return this->pcb->fdTable[fd];
+}
+
+bool Process::closeFileHandle(int fd)
+{
+    if (fd < 0 || fd >= static_cast<int>(this->pcb->fdTable.size())) return false;
+    FileHandleInterface* h = this->pcb->fdTable[fd];
+    if (h == nullptr) return false;
+    h->close();
+    delete h;
+    this->pcb->fdTable[fd] = nullptr;
+    return true;
+}
