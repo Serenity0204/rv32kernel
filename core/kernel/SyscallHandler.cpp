@@ -12,6 +12,7 @@ SyscallHandler::SyscallHandler(KernelContext* context) : ctx(context) {}
 SyscallStatus SyscallHandler::dispatch(SyscallID id)
 {
     STATS.incSyscalls();
+    this->ctx->timer.tick(SYSCALL_BASE_TIME);
 
     SyscallStatus status;
     switch (id)
@@ -239,9 +240,8 @@ void SyscallHandler::handleWrite(SyscallStatus& status)
     Word addr = this->ctx->cpu.readReg(11);
     Word count = this->ctx->cpu.readReg(12);
 
-    // 2 cycles per byte for modeling
-    size_t copyCost = count * 2;
-    this->ctx->timer.tick(SYSCALL_BASE_TIME + copyCost);
+    // charge for extra cost
+    this->ctx->timer.tick(count * 2);
 
     // get file handle
     int fd = static_cast<int>(rawFD);
@@ -253,6 +253,9 @@ void SyscallHandler::handleWrite(SyscallStatus& status)
         this->ctx->cpu.advancePC();
         return;
     }
+
+    // charge for file io cost
+    if (handle->type() == FileHandleInterface::Type::DiskFile) this->ctx->timer.tick(DISK_IO_TIME);
 
     std::vector<Byte> buffer(count);
     for (Word i = 0; i < count; ++i)
@@ -283,10 +286,8 @@ void SyscallHandler::handleRead(SyscallStatus& status)
     Word rawFD = this->ctx->cpu.readReg(10);
     Word addr = this->ctx->cpu.readReg(11);
     Word count = this->ctx->cpu.readReg(12);
-
-    // 2 cycles per byte for modeling
-    size_t copyCost = count * 2;
-    this->ctx->timer.tick(SYSCALL_BASE_TIME + copyCost);
+    // charge for extra cost
+    this->ctx->timer.tick(count * 2);
 
     // get file handle
     int fd = static_cast<int>(rawFD);
@@ -298,6 +299,8 @@ void SyscallHandler::handleRead(SyscallStatus& status)
         this->ctx->cpu.advancePC();
         return;
     }
+    // charge for file io cost
+    if (handle->type() == FileHandleInterface::Type::DiskFile) this->ctx->timer.tick(DISK_IO_TIME);
 
     std::vector<Byte> buffer(count);
     int bytesRead = handle->read(buffer, count);

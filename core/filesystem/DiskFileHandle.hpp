@@ -12,6 +12,8 @@ public:
 
     int read(std::vector<Byte>& buffer, std::size_t size) override;
     int write(const std::vector<Byte>& buffer, std::size_t size) override;
+    FileHandleInterface::Type type() override { return FileHandleInterface::Type::DiskFile; }
+
     int seek(int offset);
     int reset();
     bool eof();

@@ -10,6 +10,7 @@ public:
     bool valid = false;
     bool referenced = false;
     bool dirty = false;
+    bool swapped = false;
 
     // permission bits
     bool canRead = false;

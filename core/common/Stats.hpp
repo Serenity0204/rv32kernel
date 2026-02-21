@@ -18,6 +18,7 @@ public:
     inline void incPageFaults() { this->totalPageFaults++; }
     inline void incSyscalls() { this->totalSyscalls++; }
     inline void incDiskReads() { this->totalDiskReads++; }
+    inline void incDiskWrites() { this->totalDiskWrites++; }
     inline void incAllocatedFrames() { this->totalAllocatedFrames++; }
 
     void printSummary()
@@ -31,6 +32,7 @@ public:
         printMetric("Total Page Faults", totalPageFaults);
         printMetric("Context Switches", totalContextSwitches);
         printMetric("Disk Reads (4KB)", totalDiskReads);
+        printMetric("Disk Writes (4KB)", totalDiskWrites);
         printMetric("Physical Frames Used", totalAllocatedFrames);
 
         std::cout << "--------------------------------------------\n";
@@ -50,6 +52,7 @@ public:
         totalPageFaults = 0;
         totalSyscalls = 0;
         totalDiskReads = 0;
+        totalDiskWrites = 0;
         totalAllocatedFrames = 0;
     }
 
@@ -61,6 +64,7 @@ private:
     uint64_t totalPageFaults = 0;
     uint64_t totalSyscalls = 0;
     uint64_t totalDiskReads = 0;
+    uint64_t totalDiskWrites = 0;
     uint64_t totalAllocatedFrames = 0;
 
     void printMetric(const std::string& label, uint64_t value)
