@@ -53,6 +53,14 @@ private:
             this->threads.clear();
 
             for (Mutex* mutex : this->mutexList) delete mutex;
+
+            for (FileHandleInterface* handle : this->fdTable)
+            {
+                if (handle != nullptr)
+                    delete handle;
+            }
+
+            this->fdTable.clear();
             this->mutexList.clear();
         }
     };

@@ -75,6 +75,7 @@ public:
     }
     void printAll()
     {
+        std::cout << "\nLogs:=======================================\n";
         for (std::size_t i = 0; i < this->messages.size(); ++i)
             std::cout << this->messages[i] << std::endl;
     }
