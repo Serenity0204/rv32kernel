@@ -1,32 +1,34 @@
-# rv32kernel
+# rv32umos
 > A RISC-V OS kernel running on a custom RISC-V architectural simulator.
 
 ## Overview
-rv32kernel is an OS kernel that runs on a custom 32-bit RISC-V architectural simulator in C++, featuring virtual memory with page faults, preemptive scheduling, and custom syscall ABI. It serves an educational purpose that it tries to bridge the gap between hardware emulation and OS theory.
+rv32umos is an OS kernel that runs on a custom 32-bit RISC-V architectural simulator in C++. It features virtual memory with demand paging and swapping, preemptive multi-thread scheduling, synchronization primitives, a virtual file system, and a custom syscall ABI. It serves an educational purpose by bridging the gap between hardware emulation and OS theory.
 
 ## Architecture
 The system operates on a Sequential execution model with Interrupt Polling. This ensures deterministic behavior and allows for precise debugging of race conditions and scheduling logic.
 - **User Space**: Runs unmodified RISC-V ELF binaries. Instructions are fetched, decoded, and executed by the emulated CPU.
-- **Kernel Space (Host)**: The OS logic (Scheduler, VMM, Syscalls) runs as native C++ code.
+- **Kernel Space (Host)**: The OS logic (Scheduler, VMM, VFS, Syscalls) runs as native C++ code.
 - **Hardware Interface**: Interrupts are simulated by checking a Hardware Timer flag at the instruction boundary, providing implicit atomicity for kernel operations.
 
 
 ## Features
-
 - **The Core(CPU)**
   - **RV32IM Architecture**: Implements the base RISC-V 32-bit Integer instruction set with Multiplication and Division extension.
-  - **Cost Modeling**: Every instruction and system event (trap, context switch, memory alloc) is charged a specific "Time Cost" to simulate hardware latency.
-  
+  - **Cost Modeling**: Every instruction and system event (trap, context switch, memory alloc, disk I/O) is charged a specific "Time Cost" to simulate hardware latency.
 - **Multitasking**
-  - **Process Control**: Manages Process Control Blocks (PCBs) with states (`NEW`, `READY`, `RUNNING`, `TERMINATED`).
-  - **Scheduler**: Implements Round-Robin scheduling with a configurable time quantum.
-  - **Context Switching**: Saves and restores full hardware context (registers, PC, page tables) between processes.
-
+  - **Multi-Threading**: Native support for kernel-managed threads. Processes can spawn multiple threads that share the same page table.
+  - **Synchronization**: Provides syncrhonization mechanism including Lock, Semaphore, Condition Variable, and Barrier.
+  - **Scheduler**: Implements Round-Robin scheduling with a configurable time quantum. Context switches save and restore full hardware context (registers, PC).
 - **Memory Management**
   - **Virtual Memory**: Per-process isolation using page tables.
-  - **Lazy Loading**: Stack memory grows dynamically as the process requires it.
+  - **Lazy Loading**: Code and data segments are demand-paged directly from the ELF executable, and stack memory grows dynamically.
   - **Protection**: Enforces Read/Write/Execute permissions defined in the ELF headers.
-
+- **Storage & File System**
+  - **Virtual File System (VFS)**: An abstract layer routing file operations to their respective handlers
+  - **In-Memory Disk**: Simulates a block device with 4KB sectors.
+  - **Stub File System**: A lightweight contiguous-allocation filesystem that tracks file metadata and disk blocks.
+  - **File Handles**: Polymorphic file descriptors allowing uniform read/write calls across the Console and Disk.
+  
 - **System Calls**
   - `SYS_WRITE`: Handles output to stdout/stderr.
   - `SYS_READ`: Basic input handling from stdin.
@@ -63,7 +65,7 @@ bash clean.sh
 ```
 **Run**
 ```bash
-./rv32kernel programs/<your_file.elf>
+./rv32umos programs/<your_file.elf>
 ```
 
 ## Example Output(Log)

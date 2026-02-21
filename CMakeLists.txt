@@ -6,7 +6,7 @@ endif()
 
 # Project Name
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
-project(rv32kernel CXX)
+project(rv32umos CXX)
 
 # --- 1. Compiler Settings ---
 set(CMAKE_CXX_STANDARD 17)
@@ -34,7 +34,7 @@ file(GLOB_RECURSE SOURCES
 )
 
 # --- 4. Main Target (The Emulator) ---
-add_executable(rv32kernel ${SOURCES})
+add_executable(rv32umos ${SOURCES})
 
 # --- 5. Custom Target: Programs ---
 # Find all .c files in programs/
