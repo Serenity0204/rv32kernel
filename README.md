@@ -1,5 +1,5 @@
 # rv32umos
-> A RISC-V OS kernel running on a custom RISC-V architectural simulator.
+> RISC-V User Mode Operating System(rv32umos) is a A RISC-V OS kernel running on a custom RISC-V architectural simulator.
 
 ## Overview
 rv32umos is an OS kernel that runs on a custom 32-bit RISC-V architectural simulator in C++. It features virtual memory with demand paging and swapping, preemptive multi-thread scheduling, synchronization primitives, a virtual file system, and a custom syscall ABI. It serves an educational purpose by bridging the gap between hardware emulation and OS theory.
