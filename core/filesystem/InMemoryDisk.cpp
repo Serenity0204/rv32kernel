@@ -7,7 +7,7 @@ InMemoryDisk::InMemoryDisk(std::size_t size) : totalBlocks(size)
     this->data.resize(size * BLOCK_SIZE, 0);
 }
 
-void InMemoryDisk::readBlock(uint32_t blockIndex, std::vector<Byte>& buffer)
+void InMemoryDisk::readBlock(std::size_t blockIndex, std::vector<Byte>& buffer)
 {
     if (blockIndex >= this->totalBlocks) return;
     if (buffer.size() != BLOCK_SIZE) return;
@@ -18,7 +18,7 @@ void InMemoryDisk::readBlock(uint32_t blockIndex, std::vector<Byte>& buffer)
     std::copy(this->data.begin() + startOffset, this->data.begin() + endOffset, buffer.begin());
 }
 
-void InMemoryDisk::writeBlock(uint32_t blockIndex, const std::vector<Byte>& buffer)
+void InMemoryDisk::writeBlock(std::size_t blockIndex, const std::vector<Byte>& buffer)
 {
     if (blockIndex >= this->totalBlocks) return;
     if (buffer.size() != BLOCK_SIZE) return;

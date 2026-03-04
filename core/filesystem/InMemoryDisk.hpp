@@ -9,8 +9,8 @@ public:
     InMemoryDisk(std::size_t numBlocks);
     ~InMemoryDisk() = default;
 
-    void readBlock(uint32_t blockIndex, std::vector<Byte>& buffer) override;
-    void writeBlock(uint32_t blockIndex, const std::vector<Byte>& buffer) override;
+    void readBlock(std::size_t blockIndex, std::vector<Byte>& buffer) override;
+    void writeBlock(std::size_t blockIndex, const std::vector<Byte>& buffer) override;
     std::size_t numBlocks() const override;
 
 private:
