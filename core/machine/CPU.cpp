@@ -16,7 +16,7 @@ void CPU::reset()
     this->halted = false;
     this->pc = MEMORY_BASE;
     this->regs.reset();
-    this->regs.write(2, MEMORY_BASE + MEMORY_SIZE);
+    this->regs.write(2, STACK_TOP);
 }
 
 Word CPU::fetch()

@@ -21,6 +21,29 @@ bool VirtualMemoryManager::handlePageFault(Addr faultAddr)
     Addr vpn = faultAddr >> 12;
     PTE& pte = (*process->getPageTable())[vpn];
 
+    // if in swap
+    if (pte.swapped && !pte.valid)
+    {
+        LOG(MMU, INFO, "Swap-In VPN " + Utils::toHex(vpn));
+        this->ctx->timer.tick(DISK_IO_TIME);
+        Addr newPAddr = this->allocateFrame(process->getPid(), vpn);
+        std::vector<Byte> buffer(KERNEL_PAGE_SIZE);
+        int slot = static_cast<int>(pte.ppn);
+        this->ctx->swap->swapIn(buffer, slot);
+
+        // store the swap data back to physical memory
+        for (Addr i = 0; i < KERNEL_PAGE_SIZE; ++i)
+            this->ctx->cpu.storePhysicalMemory(newPAddr + i, 1, buffer[i]);
+
+        STATS.incSwapIns();
+
+        pte.ppn = newPAddr >> 12;
+        pte.valid = true;
+        pte.referenced = true;
+        pte.dirty = false;
+        return true;
+    }
+
     // faulting when the pte clearly still exists, it's a permission error
     if (pte.valid)
     {
@@ -53,8 +76,7 @@ bool VirtualMemoryManager::handleStackGrowth(Process* proc, Addr faultAddr, Addr
         if (faultAddr >= stackBottom && faultAddr < stackTop)
         {
             this->ctx->timer.tick(MEMORY_ALLOCATION_TIME);
-
-            Addr paddr = this->ctx->pmm.allocateFrame();
+            Addr paddr = this->allocateFrame(proc->getPid(), vpn);
 
             PTE& pte = (*proc->getPageTable())[vpn];
             pte.ppn = paddr >> 12;
@@ -62,8 +84,6 @@ bool VirtualMemoryManager::handleStackGrowth(Process* proc, Addr faultAddr, Addr
             pte.canRead = true;
             pte.canWrite = true;
             pte.referenced = true;
-
-            STATS.incAllocatedFrames();
             LOG(MMU, DEBUG, "Stack Page Allocated: " + Utils::toHex(faultAddr));
             return true;
         }
@@ -81,9 +101,7 @@ bool VirtualMemoryManager::handleLazyLoading(Process* proc, Addr faultAddr, Addr
         if (faultAddr >= seg.vaddr && faultAddr < seg.vaddr + seg.memSize)
         {
             this->ctx->timer.tick(MEMORY_ALLOCATION_TIME);
-
-            Addr paddr = this->ctx->pmm.allocateFrame();
-            STATS.incAllocatedFrames();
+            Addr paddr = this->allocateFrame(proc->getPid(), vpn);
             // Calculate offsets
             Addr pageStartVAddr = vpn * KERNEL_PAGE_SIZE;
             size_t offsetInSegment = pageStartVAddr - seg.vaddr;
@@ -120,4 +138,68 @@ bool VirtualMemoryManager::handleLazyLoading(Process* proc, Addr faultAddr, Addr
         }
     }
     return false;
+}
+
+Addr VirtualMemoryManager::allocateFrame(int pid, Addr vpn)
+{
+    FrameAllocInfo info = this->ctx->pmm.allocateFrame();
+
+    // full, must evict and try again
+    if (!info.status)
+    {
+        LOG(MMU, WARNING, "RAM Full. Evicting...");
+        this->evictPage();
+        info = this->ctx->pmm.allocateFrame();
+    }
+
+    Addr ppn = info.paddr >> 12;
+    this->ctx->pmm.registerFrameOwner(ppn, vpn, pid);
+    this->ctx->pageReplacementPolicy->onAllocate(ppn);
+    STATS.incAllocatedFrames();
+    return info.paddr;
+}
+
+void VirtualMemoryManager::evictPage()
+{
+    int found = this->ctx->pageReplacementPolicy->findVictim(this->ctx->pmm.getFrameTable(), this->ctx->processList);
+
+    // cannot find victim frame, something wrong
+    if (found == -1) throw std::runtime_error("PANIC: OOM and no victim frame found!");
+
+    Addr victimPPN = static_cast<Addr>(found);
+    const FrameInfo& info = this->ctx->pmm.getFrameTable()[victimPPN];
+    Process* process = this->ctx->processList[info.ownerPid];
+    PTE& pte = (*process->getPageTable())[info.vpn];
+    Addr paddr = victimPPN * KERNEL_PAGE_SIZE;
+
+    // read only section or clean page, load from file
+    if (!pte.canWrite || (!pte.dirty && !pte.swapped))
+    {
+        LOG(MMU, INFO, "Evicting CLEAN(CODE) page (Dropping) VPN " + Utils::toHex(info.vpn));
+        pte.valid = false;
+        pte.swapped = false;
+        pte.ppn = 0;
+        this->ctx->pmm.freeFrame(paddr);
+        this->ctx->pageReplacementPolicy->onFree(victimPPN);
+        return;
+    }
+
+    // data, stack
+    LOG(MMU, INFO, "Evicting DATA page (Swapping) VPN " + Utils::toHex(info.vpn));
+    std::vector<Byte> buffer(KERNEL_PAGE_SIZE);
+
+    // load the memory to buffer, and store it in swap
+    for (size_t i = 0; i < KERNEL_PAGE_SIZE; ++i)
+        buffer[i] = static_cast<Byte>(this->ctx->cpu.loadPhysicalMemory(paddr + i, 1));
+
+    int slot = this->ctx->swap->swapOut(buffer);
+    STATS.incSwapOuts();
+    if (slot == -1) throw std::runtime_error("Swap Full!");
+
+    pte.valid = false;
+    pte.swapped = true;
+    pte.ppn = slot;
+    pte.dirty = false;
+    this->ctx->pmm.freeFrame(paddr);
+    this->ctx->pageReplacementPolicy->onFree(victimPPN);
 }

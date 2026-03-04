@@ -14,4 +14,7 @@ private:
 
     bool handleStackGrowth(Process* proc, Addr faultAddr, Addr vpn);
     bool handleLazyLoading(Process* proc, Addr faultAddr, Addr vpn);
+
+    Addr allocateFrame(int pid, Addr vpn);
+    void evictPage();
 };

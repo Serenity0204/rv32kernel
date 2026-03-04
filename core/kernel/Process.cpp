@@ -16,6 +16,8 @@ Process::~Process()
 
 Thread* Process::createThread(Addr entryPC, Word arg)
 {
+    if (this->pcb->threads.size() >= MAX_THREADS) return nullptr;
+
     bool isExecutable = false;
 
     // check the passed in address is valid

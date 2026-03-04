@@ -182,7 +182,7 @@ void SyscallHandler::handleThreadCreate(SyscallStatus& status)
     Thread* newThread = proc->createThread(funcPtr, arg);
     if (newThread == nullptr)
     {
-        LOG(SYSCALL, ERROR, "Thread Creation Failed: Invalid Entry PC " + Utils::toHex(funcPtr));
+        LOG(SYSCALL, ERROR, "Thread Creation Failed");
         // Return -1 to user
         this->ctx->cpu.writeReg(10, -1);
         this->ctx->cpu.advancePC();
