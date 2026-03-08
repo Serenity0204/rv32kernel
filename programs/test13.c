@@ -1,3 +1,4 @@
+#include "stdio.h"
 #include "stdlib.h"
 #include "syscall.h" // Using your custom I/O
 
