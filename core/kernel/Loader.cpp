@@ -5,7 +5,7 @@
 #include <elf.h>
 #include <fstream>
 
-Loader::Loader(KernelContext* context) : ctx(context) {}
+Loader::Loader(SystemContext* context) : systemCtx(context) {}
 
 bool Loader::loadELF(const std::string& filename)
 {
@@ -25,9 +25,9 @@ bool Loader::loadELF(const std::string& filename)
     }
 
     // if already max processes, fail the creation
-    if (this->ctx->processList.size() == MAX_PROCESS) return false;
+    if (this->systemCtx->processList.size() == MAX_PROCESS) return false;
 
-    int newPid = this->ctx->processList.size();
+    int newPid = this->systemCtx->processList.size();
     Process* process = new Process(newPid, filename);
 
     // Parse Program Headers (Segments)
@@ -62,8 +62,8 @@ bool Loader::loadELF(const std::string& filename)
     }
     mainThread->setState(ThreadState::READY);
 
-    this->ctx->activeThreads.push_back(mainThread);
-    this->ctx->processList.push_back(process);
+    this->systemCtx->activeThreads.push_back(mainThread);
+    this->systemCtx->processList.push_back(process);
 
     LOG(LOADER, INFO, "Created Process " + std::to_string(newPid) + ": " + filename);
     return true;

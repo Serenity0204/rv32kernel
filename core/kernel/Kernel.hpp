@@ -10,7 +10,7 @@ class Kernel
 {
 public:
     Kernel();
-    ~Kernel() = default;
+    ~Kernel();
     void init();
     void step();
     bool isRunning();
@@ -19,11 +19,12 @@ public:
     bool killProcess(int pid);
 
 private:
-    KernelContext ctx;
+    SystemContext systemCtx;
+    StorageContext storageCtx;
 
 private:
-    Scheduler scheduler;
-    VirtualMemoryManager vmm;
-    SyscallHandler syscalls;
-    Loader loader;
+    Scheduler* scheduler;
+    VirtualMemoryManager* vmm;
+    SyscallHandler* syscalls;
+    Loader* loader;
 };

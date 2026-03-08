@@ -5,11 +5,12 @@
 class SyscallHandler
 {
 public:
-    SyscallHandler(KernelContext* ctx);
+    SyscallHandler(SystemContext* ctx, StorageContext* storage);
     SyscallStatus dispatch(SyscallID id);
 
 private:
-    KernelContext* ctx;
+    SystemContext* systemCtx;
+    StorageContext* storageCtx;
 
     // process related
     void handleExit(SyscallStatus& status);

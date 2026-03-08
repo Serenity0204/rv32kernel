@@ -12,7 +12,7 @@
 #include "VFSInterface.hpp"
 #include <vector>
 
-struct KernelContext
+struct SystemContext
 {
 public:
     CPU cpu;
@@ -24,42 +24,16 @@ public:
 
     Timer timer;
 
-    // disk and fs
-    VFSInterface* vfs;
-    DiskInterface* disk;
-    PageReplacementPolicy* pageReplacementPolicy;
-    SwapManager* swap;
-
-    KernelContext() : timer(TIME_QUANTUM)
+    SystemContext() : timer(TIME_QUANTUM)
     {
-        this->initSubsystem<StubFileSystem, InMemoryDisk, FIFOPolicy>(NUM_DISK_BLOCKS);
-        this->swap = new SwapManager(this->disk, NUM_DISK_BLOCKS, NUM_SWAP_BLOCKS);
+        this->pmm.init();
     }
 
-    ~KernelContext()
+    ~SystemContext()
     {
         for (auto* p : this->processList) delete p;
         this->processList.clear();
         this->activeThreads.clear();
-
-        delete this->vfs;
-        delete this->disk;
-        delete this->pageReplacementPolicy;
-        delete this->swap;
-    }
-
-    template <typename VFSImpl, typename DiskImpl, typename PageReplacementPolicyImpl>
-    inline void initSubsystem(std::size_t numBlocks)
-    {
-        this->pmm.init();
-        static_assert(std::is_base_of<VFSInterface, VFSImpl>::value, "VFSImpl must derive from VFSInterface");
-        static_assert(std::is_base_of<DiskInterface, DiskImpl>::value, "DiskImpl must derive from DiskInterface");
-        static_assert(std::is_base_of<PageReplacementPolicy, PageReplacementPolicyImpl>::value, "PageReplacementPolicyImpl must derive from PageReplacementPolicy");
-
-        this->disk = new DiskImpl(numBlocks);
-        this->vfs = new VFSImpl(this->disk);
-        this->pageReplacementPolicy = new PageReplacementPolicyImpl();
-        this->pageReplacementPolicy->init(this->pmm.getTotalFrames());
     }
 
     inline Thread* getCurrentThread()
@@ -68,5 +42,38 @@ public:
         if (static_cast<std::size_t>(currentThreadIndex) >= activeThreads.size()) return nullptr;
 
         return this->activeThreads[this->currentThreadIndex];
+    }
+};
+
+struct StorageContext
+{
+    VFSInterface* vfs = nullptr;
+    DiskInterface* disk = nullptr;
+    PageReplacementPolicy* pageReplacementPolicy = nullptr;
+    SwapManager* swap = nullptr;
+
+    template <typename VFSImpl, typename DiskImpl, typename PageReplacementPolicyImpl>
+    void init(std::size_t numDiskBlocks, std::size_t numSwapBlocks, std::size_t totalFrames)
+    {
+        static_assert(std::is_base_of<VFSInterface, VFSImpl>::value,
+                      "VFSImpl must derive from VFSInterface");
+        static_assert(std::is_base_of<DiskInterface, DiskImpl>::value,
+                      "DiskImpl must derive from DiskInterface");
+        static_assert(std::is_base_of<PageReplacementPolicy, PageReplacementPolicyImpl>::value,
+                      "PageReplacementPolicyImpl must derive from PageReplacementPolicy");
+
+        this->disk = new DiskImpl(numDiskBlocks);
+        this->vfs = new VFSImpl(this->disk);
+        this->pageReplacementPolicy = new PageReplacementPolicyImpl();
+        this->pageReplacementPolicy->init(totalFrames);
+        this->swap = new SwapManager(this->disk, numDiskBlocks, numSwapBlocks);
+    }
+
+    ~StorageContext()
+    {
+        delete this->swap;
+        delete this->pageReplacementPolicy;
+        delete this->vfs;
+        delete this->disk;
     }
 };

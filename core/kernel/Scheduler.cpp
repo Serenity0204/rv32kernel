@@ -1,23 +1,23 @@
 #include "Scheduler.hpp"
 #include "Logger.hpp"
 
-Scheduler::Scheduler(KernelContext* context) : ctx(context) {}
+Scheduler::Scheduler(SystemContext* context) : systemCtx(context) {}
 
 void Scheduler::yield()
 {
-    if (this->ctx->activeThreads.empty()) return;
+    if (this->systemCtx->activeThreads.empty()) return;
 
     // Round Robin: Find the next READY thread
-    int nextIndex = this->ctx->currentThreadIndex;
+    int nextIndex = this->systemCtx->currentThreadIndex;
     std::size_t attempts = 0;
     bool found = false;
-    std::size_t count = this->ctx->activeThreads.size();
+    std::size_t count = this->systemCtx->activeThreads.size();
 
     do
     {
         nextIndex = (nextIndex + 1) % count;
         attempts++;
-        if (this->ctx->activeThreads[nextIndex]->getState() == ThreadState::READY)
+        if (this->systemCtx->activeThreads[nextIndex]->getState() == ThreadState::READY)
         {
             found = true;
             break;
@@ -29,7 +29,7 @@ void Scheduler::yield()
         bool canRunCurrentProcess = this->checkCurrentThreadRunnable();
         if (canRunCurrentProcess)
         {
-            this->ctx->timer.reset();
+            this->systemCtx->timer.reset();
             return;
         }
 
@@ -38,18 +38,18 @@ void Scheduler::yield()
         if (allDead)
         {
             LOG(SCHEDULER, INFO, "All threads terminated.");
-            this->ctx->cpu.halt();
+            this->systemCtx->cpu.halt();
         }
         return;
     }
 
     // reset the timer
-    this->ctx->timer.reset();
+    this->systemCtx->timer.reset();
 
     // Perform Switch
-    if (nextIndex != this->ctx->currentThreadIndex)
+    if (nextIndex != this->systemCtx->currentThreadIndex)
     {
-        Thread* nextThread = this->ctx->activeThreads[nextIndex];
+        Thread* nextThread = this->systemCtx->activeThreads[nextIndex];
         Process* proc = nextThread->getProcess();
         LOG(SCHEDULER, INFO, "Switching to Thread " + std::to_string(nextThread->getTid()) + " (PID " + std::to_string(proc->getPid()) + ")");
         this->contextSwitch(nextIndex);
@@ -59,34 +59,34 @@ void Scheduler::yield()
 void Scheduler::contextSwitch(std::size_t nextIndex)
 {
     STATS.incContextSwitches();
-    this->ctx->timer.tick(CONTEXT_SWITCH_TIME);
+    this->systemCtx->timer.tick(CONTEXT_SWITCH_TIME);
 
-    Thread* nextThread = this->ctx->activeThreads[nextIndex];
-    Thread* currentThread = this->ctx->getCurrentThread();
+    Thread* nextThread = this->systemCtx->activeThreads[nextIndex];
+    Thread* currentThread = this->systemCtx->getCurrentThread();
 
     // Save Current State (if valid)
     if (currentThread != nullptr && currentThread->getState() != ThreadState::TERMINATED)
     {
-        currentThread->getRegs() = this->ctx->cpu.getRegs();
-        currentThread->setPC(this->ctx->cpu.getPC());
+        currentThread->getRegs() = this->systemCtx->cpu.getRegs();
+        currentThread->setPC(this->systemCtx->cpu.getPC());
 
         if (currentThread->getState() == ThreadState::RUNNING) currentThread->setState(ThreadState::READY);
     }
 
-    this->ctx->cpu.getRegs() = nextThread->getRegs();
-    this->ctx->cpu.setPC(nextThread->getPC());
+    this->systemCtx->cpu.getRegs() = nextThread->getRegs();
+    this->systemCtx->cpu.setPC(nextThread->getPC());
     nextThread->setState(ThreadState::RUNNING);
 
     // check if it's switch within the same process
     if (currentThread == nullptr || currentThread->getProcess()->getPid() != nextThread->getProcess()->getPid())
-        this->ctx->cpu.setPageTable(nextThread->getProcess()->getPageTable());
+        this->systemCtx->cpu.setPageTable(nextThread->getProcess()->getPageTable());
 
-    this->ctx->currentThreadIndex = nextIndex;
+    this->systemCtx->currentThreadIndex = nextIndex;
 }
 
 bool Scheduler::checkCurrentThreadRunnable()
 {
-    Thread* current = this->ctx->getCurrentThread();
+    Thread* current = this->systemCtx->getCurrentThread();
     if (current == nullptr) return false;
     if (current->getState() == ThreadState::RUNNING) return true;
     return false;
@@ -94,7 +94,7 @@ bool Scheduler::checkCurrentThreadRunnable()
 
 bool Scheduler::checkAllTerminated()
 {
-    for (auto* t : this->ctx->activeThreads)
+    for (auto* t : this->systemCtx->activeThreads)
     {
         if (t->getState() != ThreadState::TERMINATED) return false;
     }

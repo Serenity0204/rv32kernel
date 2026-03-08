@@ -4,7 +4,7 @@
 class Scheduler
 {
 public:
-    Scheduler(KernelContext* context);
+    Scheduler(SystemContext* context);
     void yield();
 
 private:
@@ -13,5 +13,5 @@ private:
     bool checkCurrentThreadRunnable();
 
 private:
-    KernelContext* ctx;
+    SystemContext* systemCtx;
 };
